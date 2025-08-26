@@ -10,7 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler
+from torch.amp import autocast
 from torch.utils.data import DataLoader
 import yaml
 import numpy as np
@@ -190,7 +191,7 @@ class Trainer:
                 images = batch['image'].to(self.device, non_blocking=True)
                 labels = batch['label'].to(self.device, non_blocking=True)
                 
-                with autocast(enabled=self.config['training']['mixed_precision']):
+                with autocast(device_type='cuda', enabled=self.config['training']['mixed_precision']):
                     outputs = model(images)
                     loss = criterion(outputs['main_logits'], labels)
                     
@@ -210,7 +211,7 @@ class Trainer:
         # Detailed metrics
         metrics = {
             'accuracy': epoch_acc,
-            'classification_report': classification_report(all_labels, all_predictions, output_dict=True),
+            'classification_report': classification_report(all_labels, all_predictions, output_dict=True, zero_division=0),
             'confusion_matrix': confusion_matrix(all_labels, all_predictions)
         }
         
@@ -235,7 +236,7 @@ class Trainer:
             optimizer.zero_grad()
             
             # Forward + backward + optimize
-            with autocast(enabled=self.config['training']['mixed_precision']):
+            with autocast(device_type='cuda', enabled=self.config['training']['mixed_precision']):
                 outputs = model(images)
                 loss = criterion(outputs['main_logits'], labels)
                 

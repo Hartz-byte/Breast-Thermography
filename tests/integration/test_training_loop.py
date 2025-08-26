@@ -146,9 +146,8 @@ class TestTrainingLoop:
             criterion = trainer.build_criterion(dummy_loader)
             optimizer = optim.AdamW(model.parameters())
             
-            # Use the new torch.amp.GradScaler API
-            scaler = torch.amp.GradScaler(device_type='cuda' if torch.cuda.is_available() else 'cpu', 
-                                        enabled=test_config['training']['mixed_precision'])
+            # Initialize GradScaler for mixed precision training
+            scaler = torch.amp.GradScaler(enabled=test_config['training']['mixed_precision'])
             
             # Test training epoch
             loss, acc = trainer.train_epoch(model, dummy_loader, criterion, optimizer, scaler, 0)

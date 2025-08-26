@@ -153,5 +153,5 @@ class ModelEvaluator:
             'roc_auc': roc_auc,
             'confusion_matrix': cm,
             'per_class_metrics': per_class_metrics,
-            'classification_report': classification_report(y_true, y_pred, target_names=class_names, output_dict=True)
+            'classification_report': classification_report(y_true, y_pred, target_names=class_names, output_dict=True, zero_division=0)
         }
