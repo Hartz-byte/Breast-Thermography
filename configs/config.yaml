@@ -7,6 +7,9 @@ data:
   excel_file: "Diagnostics.xlsx"  # Will be in data/raw/
   image_size: [224, 224]  # Optimized for RTX 3050
   views: ["anterior", "oblleft", "oblright"]
+  # ImageNet normalization by default
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
 
 # Model settings
 model:
@@ -28,15 +31,29 @@ training:
   warmup_epochs: 5
   mixed_precision: true
   gradient_checkpointing: true
+  
+  # Class imbalance handling
+  class_weighting: 'effective'  # Options: 'inverse_freq', 'sqrt', 'balanced', 'effective'
+  beta: 0.999  # For effective number of samples
+  
+  # Loss function settings
+  loss:
+    gamma: 2.0  # Focal loss gamma
+    label_smoothing: 0.1  # Label smoothing factor
+    class_balanced: true  # Use class-balanced focal loss
+    beta: 0.999  # Beta for class-balanced loss
 
 # Data augmentation
 augmentation:
+  # Base augmentation probabilities
   horizontal_flip: 0.5
   rotation: 15
   brightness: 0.2
   contrast: 0.2
-  normalize_mean: [0.485, 0.456, 0.406]
-  normalize_std: [0.229, 0.224, 0.225]
+  
+  # Class-specific augmentation strength
+  base_strength: 0.5  # Minimum augmentation strength
+  max_strength: 2.0   # Maximum augmentation strength for minority classes
 
 # Validation settings
 validation:

@@ -5,6 +5,7 @@ import cv2
 from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
+from typing import Tuple, Dict, Optional, Callable, Any
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from sklearn.model_selection import train_test_split
@@ -75,11 +76,21 @@ class BreastThermographyDataset(Dataset):
                     if self.transform is not None:  # Only log during training
                         logging.warning(f"Missing image at {img_path}, using zero tensor")
                 
-                # Apply transformations if specified
-                if self.transform:
-                    augmented = self.transform(image=image)
+                if self.transform is not None:
+                    # Apply class-specific transformations if available
+                    if hasattr(self, 'data_preprocessor'):
+                        # Get class-specific transform
+                        class_transform = self.data_preprocessor.create_transforms(
+                            is_train=True,
+                            label=label
+                        )
+                        augmented = class_transform(image=image)
+                    else:
+                        # Fallback to default transform
+                        augmented = self.transform(image=image)
+                        
                     image = augmented['image']
-                
+                    
                 images.append(image)
                 
             except Exception as e:
@@ -120,6 +131,12 @@ class DataPreprocessor:
         self.right_encoder = LabelEncoder()
         self.logger = logging.getLogger(__name__)
         
+        # Class balancing parameters
+        self.class_weights = None
+        self.class_counts = None
+        self.label_mapping = {'N': 0, 'PB': 1, 'PM': 2}
+        self.label_names = {0: 'Normal', 1: 'Benign', 2: 'Malignant'}
+        
     def load_diagnostics(self):
         """Load and preprocess the diagnostics Excel file."""
         try:
@@ -151,21 +168,33 @@ class DataPreprocessor:
             label_names = {0: 'Normal', 1: 'Benign', 2: 'Malignant'}
             df['combined_label'] = df['label'].map(label_names)
             
-            # Calculate class weights for handling imbalance
-            class_counts = df['label'].value_counts().sort_index()
+            # Store class distribution
+            self.class_counts = df['label'].value_counts().sort_index()
             total_samples = len(df)
-            num_classes = len(class_counts)
+            num_classes = len(self.class_counts)
             
-            # Inverse frequency weighting
-            weights = [
-                # total_samples / (num_classes * class_counts[i])
-                total_samples / (num_classes * count)
-                for count in class_counts.values
-            ]
+            # Get weighting method from config or use default
+            method = self.config['training'].get('class_weighting', 'inverse_freq')
+            
+            # Calculate class weights
+            if method == 'inverse_freq':
+                weights = total_samples / (num_classes * self.class_counts.values)
+            elif method == 'sqrt':
+                weights = np.sqrt(total_samples / self.class_counts.values)
+            elif method == 'balanced':
+                weights = (1 / self.class_counts.values) * (total_samples / num_classes)
+            elif method == 'effective':
+                beta = self.config['training'].get('beta', 0.999)
+                effective_num = 1.0 - np.power(beta, self.class_counts.values)
+                weights = (1.0 - beta) / effective_num
+                weights = weights / np.sum(weights) * num_classes
+            else:
+                weights = np.ones(num_classes)
+                
             self.class_weights = torch.tensor(weights, dtype=torch.float32)
             
-            self.logger.info(f"Class distribution: {class_counts.to_dict()}")
-            self.logger.info(f"Class weights: {self.class_weights.tolist()}")
+            self.logger.info(f"Class distribution: {self.class_counts.to_dict()}")
+            self.logger.info(f"Using {method} class weights: {self.class_weights.tolist()}")
             
             return df
             
@@ -173,40 +202,183 @@ class DataPreprocessor:
             self.logger.error(f"Error loading diagnostics file: {str(e)}")
             raise
     
-    def create_transforms(self, is_train: bool = True) -> A.Compose:
-        """Create data augmentation transforms."""
-        if is_train:
-            transform = A.Compose([
-                A.Resize(self.config['data']['image_size'][0], 
-                        self.config['data']['image_size'][1]),
-                A.HorizontalFlip(p=self.config['augmentation']['horizontal_flip']),
-                A.Rotate(limit=self.config['augmentation']['rotation'], p=0.5),
-                A.RandomBrightnessContrast(
-                    brightness_limit=self.config['augmentation']['brightness'],
-                    contrast_limit=self.config['augmentation']['contrast'],
-                    p=0.5
-                ),
-                A.Normalize(
-                    mean=self.config['augmentation']['normalize_mean'],
-                    std=self.config['augmentation']['normalize_std']
-                ),
-                ToTensorV2()
-            ])
-        else:
-            transform = A.Compose([
-                A.Resize(self.config['data']['image_size'][0], 
-                        self.config['data']['image_size'][1]),
-                A.Normalize(
-                    mean=self.config['augmentation']['normalize_mean'],
-                    std=self.config['augmentation']['normalize_std']
-                ),
-                ToTensorV2()
-            ])
+    def _get_augmentation_strength(self, label: Optional[int] = None) -> float:
+        """Get augmentation strength multiplier based on class frequency."""
+        if label is None or self.class_counts is None:
+            return 1.0
+            
+        # Get class frequency (inverse of count, normalized)
+        freq = 1.0 / self.class_counts[label]
+        max_freq = 1.0 / self.class_counts.min()
+        
+        # Scale between base_strength and max_strength
+        base_strength = self.config['augmentation'].get('base_strength', 0.5)
+        max_strength = self.config['augmentation'].get('max_strength', 2.0)
+        
+        # Linear scaling based on inverse frequency
+        strength = base_strength + (max_strength - base_strength) * (freq / max_freq)
+        return min(max(strength, base_strength), max_strength)
+    
+    def create_transforms(self, is_train: bool = True, label: Optional[int] = None) -> A.Compose:
+        """
+        Create data augmentation transforms with class-specific augmentation strength.
+        
+        Args:
+            is_train: Whether to create training transforms (if False, only basic transforms are applied)
+            label: Class label (used to determine augmentation strength for training)
+            
+        Returns:
+            A.Compose: Albumentations composition of transforms
+        """
+        # Base resize and normalize transforms
+        base_transforms = [
+            A.Resize(
+                self.config['data']['image_size'][0], 
+                self.config['data']['image_size'][1]
+            ),
+            A.Normalize(
+                mean=self.config['data']['mean'],
+                std=self.config['data']['std']
+            ),
+            ToTensorV2()
+        ]
+        
+        if not is_train:
+            return A.Compose(base_transforms)
+            
+        # Get augmentation strength based on class frequency
+        strength = self._get_augmentation_strength(label)
+        
+        # Base augmentation probabilities
+        p_hflip = 0.5 * strength
+        p_vflip = 0.5 * strength
+        p_rotate = 0.5 * strength
+        p_brightness = 0.2 * strength
+        p_affine = 0.3 * strength
+        
+        # Define augmentation pipeline
+        augmentations = [
+            # Geometric transforms
+            A.HorizontalFlip(p=p_hflip),
+            A.VerticalFlip(p=p_vflip),
+            A.Rotate(limit=30, p=p_rotate),
+            A.ShiftScaleRotate(
+                shift_limit=0.1 * strength,
+                scale_limit=0.1 * strength,
+                rotate_limit=15 * strength,
+                p=p_affine
+            ),
+            
+            # Color transforms
+            A.RandomBrightnessContrast(
+                brightness_limit=0.2 * strength,
+                contrast_limit=0.2 * strength,
+                p=p_brightness
+            ),
+            A.HueSaturationValue(
+                hue_shift_limit=20 * strength,
+                sat_shift_limit=30 * strength,
+                val_shift_limit=20 * strength,
+                p=p_brightness
+            ),
+            
+            # Noise and blur
+            A.GaussNoise(var_limit=(10.0 * strength, 50.0 * strength), p=0.1 * strength),
+            A.GaussianBlur(blur_limit=(3, 7), p=0.1 * strength),
+            
+            # Advanced augmentations
+            A.CoarseDropout(
+                max_holes=8,
+                max_height=32 * strength,
+                max_width=32 * strength,
+                min_holes=1,
+                min_height=8,
+                min_width=8,
+                fill_value=0,
+                p=0.1 * strength
+            ),
+            A.RandomGridShuffle(grid=(2, 2), p=0.1 * strength)
+        ]
+        
+        # Combine all transforms
+        transform = A.Compose([
+            *augmentations,
+            *base_transforms
+        ])
         
         return transform
     
-    def create_datasets(self) -> Tuple[DataLoader, DataLoader, pd.DataFrame]:
-        """Create train and validation datasets."""
+    def save_processed_data(self, df: pd.DataFrame, output_dir: str = "../data/processed") -> None:
+        """Save preprocessed data to disk with progress tracking."""
+        from tqdm import tqdm
+        import time
+        
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Create reverse mapping from label to class name
+        label_to_class = {v: k for k, v in self.class_to_folder.items()}
+        
+        # Create subdirectories for each class
+        for cls in self.class_to_folder.values():
+            os.makedirs(os.path.join(output_dir, str(cls)), exist_ok=True)
+        
+        # Initialize counters
+        total_samples = len(df)
+        processed = 0
+        errors = 0
+        
+        print(f"\nProcessing {total_samples} samples...")
+        start_time = time.time()
+        
+        # Process and save each sample
+        for idx, row in tqdm(df.iterrows(), total=total_samples, desc="Processing"):
+            try:
+                patient_id = row['Image']
+                label = row['label']
+                
+                # Map numeric label to class name
+                class_name = label_to_class.get(label, str(label))
+                output_path = os.path.join(output_dir, class_name, f"{patient_id}.pt")
+                
+                # Skip if already processed
+                if os.path.exists(output_path):
+                    processed += 1
+                    continue
+                    
+                # Get the sample and save
+                sample = self.dataset[idx]
+                torch.save({
+                    'image': sample['image'],
+                    'label': label,
+                    'patient_id': patient_id
+                }, output_path)
+                
+                processed += 1
+                
+            except Exception as e:
+                errors += 1
+                print(f"\nError processing {patient_id if 'patient_id' in locals() else 'unknown'}: {str(e)}")
+                # Add a small delay to prevent error message flooding
+                time.sleep(0.1)
+                continue
+        
+        # Print summary
+        elapsed = time.time() - start_time
+        print(f"\nProcessing complete!")
+        print(f"  - Processed: {processed}/{total_samples} samples")
+        print(f"  - Errors: {errors}")
+        print(f"  - Time taken: {elapsed:.2f} seconds")
+        if errors > 0:
+            print("\nWarning: Some samples could not be processed. Check the error messages above.")
+        
+        print(f"\nProcessed data saved to: {os.path.abspath(output_dir)}")
+    
+    def create_datasets(self, save_processed: bool = True) -> Tuple[DataLoader, DataLoader, pd.DataFrame]:
+        """Create train and validation datasets.
+        
+        Args:
+            save_processed: If True, save processed data to disk
+        """
         df = self.load_diagnostics()
         
         # Get unique classes in the data
@@ -238,6 +410,14 @@ class DataPreprocessor:
             config=self.config,
             data_preprocessor=self
         )
+        
+        # Save processed data if requested
+        if save_processed:
+            self.dataset = train_dataset  # Store reference for saving
+            self.save_processed_data(train_df)
+            
+            self.dataset = val_dataset
+            self.save_processed_data(val_df)
         
         # Calculate weights for weighted random sampler
         train_labels = train_df['label'].values
@@ -275,9 +455,10 @@ class DataPreprocessor:
         
         return train_loader, val_loader, df
     
-    def visualize_data_distribution(self, df: pd.DataFrame, save_path: str = "outputs/plots"):
+    def visualize_data_distribution(self, df: pd.DataFrame, save_path: str = "outputs/plots/data_distribution.png"):
         """Visualize data distribution."""
-        os.makedirs(save_path, exist_ok=True)
+        # Create parent directory if it doesn't exist
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
         
         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
         
@@ -310,7 +491,7 @@ class DataPreprocessor:
         axes[1, 2].set_title('Feature Correlation Matrix')
         
         plt.tight_layout()
-        plt.savefig(os.path.join(save_path, 'data_distribution.png'), dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
         
         # Print statistics

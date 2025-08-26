@@ -25,24 +25,81 @@ from src.model import ModelBuilder, HybridCNNViT
 from src.data_prep import DataPreprocessor
 
 class FocalLoss(nn.Module):
-    """Focal Loss for handling class imbalance."""
-    def __init__(self, alpha: Optional[torch.Tensor] = None, gamma: float = 2.0, reduction: str = 'mean'):
+    """
+    Focal Loss variant that supports:
+    - Class balancing via alpha parameter
+    - Label smoothing
+    - Class-balanced focal loss
+    - Focal loss with gamma parameter
+    
+    References:
+        [1] https://arxiv.org/abs/1708.02002 (Focal Loss)
+        [2] https://arxiv.org/abs/1901.05555 (Class-Balanced Loss)
+    """
+    def __init__(self, 
+                 alpha: Optional[torch.Tensor] = None, 
+                 gamma: float = 2.0, 
+                 reduction: str = 'mean',
+                 label_smoothing: float = 0.0,
+                 beta: Optional[float] = None,
+                 class_balanced: bool = False):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
+        self.label_smoothing = label_smoothing
+        self.beta = beta
+        self.class_balanced = class_balanced
+        
+        if self.class_balanced and self.beta is None:
+            self.beta = 0.999  # Default beta for class-balanced loss
         
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
-        pt = torch.exp(-ce_loss)
-        focal_loss = (1 - pt) ** self.gamma * ce_loss
+        # Apply label smoothing if specified
+        if self.label_smoothing > 0:
+            log_probs = F.log_softmax(inputs, dim=-1)
+            n_classes = inputs.size(-1)
+            
+            # Convert targets to one-hot and apply smoothing
+            one_hot = torch.zeros_like(log_probs).scatter_(1, targets.unsqueeze(1), 1)
+            smooth_labels = one_hot * (1 - self.label_smoothing) + self.label_smoothing / n_classes
+            
+            # Calculate cross entropy
+            loss = - (smooth_labels * log_probs).sum(dim=-1)
+        else:
+            # Standard cross entropy
+            loss = F.cross_entropy(inputs, targets, reduction='none')
         
-        if self.alpha is not None:
+        # Calculate p_t (probability of true class)
+        pt = torch.exp(-loss)
+        
+        # Focal loss component
+        focal_term = (1 - pt) ** self.gamma
+        
+        # Class balanced weight if enabled
+        if self.class_balanced and self.beta is not None:
+            # Effective number of samples: (1 - beta^n) / (1 - beta)
+            # where n is the number of samples in each class
+            # We use inverse of effective number as weight
+            effective_num = (1.0 - self.beta ** self.alpha) / (1.0 - self.beta)
+            weights = (1.0 - self.beta) / effective_num
+            weights = weights / weights.sum() * len(weights)  # Normalize to have mean 1
+            
+            if weights.device != targets.device:
+                weights = weights.to(targets.device)
+            class_weights = weights.gather(0, targets)
+            focal_term = focal_term * class_weights
+        # Standard class weights
+        elif self.alpha is not None:
             if self.alpha.device != targets.device:
                 self.alpha = self.alpha.to(targets.device)
             alpha_t = self.alpha.gather(0, targets)
-            focal_loss = alpha_t * focal_loss
-            
+            focal_term = focal_term * alpha_t
+        
+        # Combine terms
+        focal_loss = focal_term * loss
+        
+        # Apply reduction
         if self.reduction == 'mean':
             return focal_loss.mean()
         elif self.reduction == 'sum':
@@ -143,14 +200,29 @@ class Trainer:
         return model
     
     def build_criterion(self, train_loader: DataLoader) -> nn.Module:
-        """Build loss criterion with class weights."""
+        """Build loss criterion with class weights and other parameters from config."""
         # Get class weights from the data loader
         class_weights = train_loader.dataset.data_preprocessor.class_weights.to(self.device)
         
-        self.logger.info(f"Using class weights: {class_weights.tolist()}")
+        # Get loss parameters from config with defaults
+        loss_cfg = self.config['training'].get('loss', {})
+        gamma = loss_cfg.get('gamma', 2.0)
+        label_smoothing = loss_cfg.get('label_smoothing', 0.0)
+        use_class_balanced = loss_cfg.get('class_balanced', False)
+        beta = loss_cfg.get('beta', 0.999)
         
-        # Use focal loss for better handling of imbalanced data
-        criterion = FocalLoss(alpha=class_weights, gamma=2.0)
+        self.logger.info(f"Using class weights: {class_weights.tolist()}")
+        self.logger.info(f"Loss config - gamma: {gamma}, label_smoothing: {label_smoothing}, "
+                        f"class_balanced: {use_class_balanced}, beta: {beta}")
+        
+        # Initialize focal loss with configurable parameters
+        criterion = FocalLoss(
+            alpha=class_weights,
+            gamma=gamma,
+            label_smoothing=label_smoothing,
+            class_balanced=use_class_balanced,
+            beta=beta if use_class_balanced else None
+        )
         
         return criterion
     
