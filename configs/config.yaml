@@ -1,0 +1,60 @@
+# Breast Thermography Classification Configuration
+
+# Dataset settings
+data:
+  raw_path: "data/raw"  # Parent directory containing Breast-Thermography-Raw
+  processed_path: "data/processed"
+  excel_file: "Diagnostics.xlsx"  # Will be in data/raw/
+  image_size: [224, 224]  # Optimized for RTX 3050
+  views: ["anterior", "oblleft", "oblright"]
+
+# Model settings
+model:
+  name: "HybridCNNViT"
+  num_classes: 3  # 0: Normal, 1: Benign, 2: Malignant
+  backbone: "resnet18"  # Lightweight for 4GB VRAM
+  vit_patch_size: 16
+  vit_embed_dim: 256
+  vit_depth: 6
+  vit_heads: 8
+  dropout: 0.1
+
+# Training settings
+training:
+  batch_size: 8  # Optimized for 4GB VRAM
+  learning_rate: 0.001
+  epochs: 50
+  weight_decay: 0.01
+  warmup_epochs: 5
+  mixed_precision: true
+  gradient_checkpointing: true
+
+# Data augmentation
+augmentation:
+  horizontal_flip: 0.5
+  rotation: 15
+  brightness: 0.2
+  contrast: 0.2
+  normalize_mean: [0.485, 0.456, 0.406]
+  normalize_std: [0.229, 0.224, 0.225]
+
+# Validation settings
+validation:
+  split_ratio: 0.2
+  stratify: true
+  random_state: 42
+
+# Hardware settings
+hardware:
+  device: "cuda"
+  num_workers: 4
+  pin_memory: true
+
+# Output settings
+output:
+  model_dir: "outputs/models"
+  plot_dir: "outputs/plots"
+  result_dir: "outputs/results"
+
+# Class weights (will be calculated automatically)
+class_weights: [1.0, 1.0, 1.0]  # Normal, Benign, Malignant
