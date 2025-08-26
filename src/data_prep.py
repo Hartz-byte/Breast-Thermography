@@ -111,7 +111,7 @@ class BreastThermographyDataset(Dataset):
 class DataPreprocessor:
     """Data preprocessing and loading utilities."""
     
-    def __init__(self, config_path: str = "configs/config.yaml"):
+    def __init__(self, config_path: str = "../configs/config.yaml"):
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
@@ -123,8 +123,15 @@ class DataPreprocessor:
     def load_diagnostics(self):
         """Load and preprocess the diagnostics Excel file."""
         try:
-            # Load the Excel file
-            excel_path = os.path.join(self.config['data']['raw_path'], 'Breast-Thermography-Raw', self.config['data']['excel_file'])
+            # Construct the full path to the Excel file
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            raw_path = os.path.join(base_dir, self.config['data']['raw_path'].replace('/', os.sep))
+            excel_path = os.path.join(raw_path, 'Breast-Thermography-Raw', self.config['data']['excel_file'])
+            
+            # Check if file exists
+            if not os.path.exists(excel_path):
+                raise FileNotFoundError(f"Excel file not found at: {excel_path}")
+                
             df = pd.read_excel(excel_path)
             
             # Clean up column names
@@ -139,6 +146,10 @@ class DataPreprocessor:
             
             # Combine labels (using the more severe condition if both sides have issues)
             df['label'] = df[['left_label', 'right_label']].max(axis=1)
+            
+            # Map numerical labels back to string labels for readability
+            label_names = {0: 'Normal', 1: 'Benign', 2: 'Malignant'}
+            df['combined_label'] = df['label'].map(label_names)
             
             # Calculate class weights for handling imbalance
             class_counts = df['label'].value_counts().sort_index()
@@ -194,13 +205,18 @@ class DataPreprocessor:
         
         return transform
     
-    def create_datasets(self) -> Tuple[Dataset, Dataset, pd.DataFrame]:
+    def create_datasets(self) -> Tuple[DataLoader, DataLoader, pd.DataFrame]:
         """Create train and validation datasets."""
         df = self.load_diagnostics()
         
-        # Create class weights for imbalanced data
-        class_counts = df['label'].value_counts().sort_index()
-        total_samples = len(df)
+        # Get unique classes in the data
+        unique_classes = df['label'].unique()
+        num_classes = len(unique_classes)
+        
+        # Update class_to_folder mapping based on actual data
+        self.class_to_folder = {i: cls for i, cls in enumerate(unique_classes)}
+        
+        # Create train/validation split
         train_df, val_df = train_test_split(
             df,
             test_size=self.config['validation']['split_ratio'],
@@ -213,21 +229,21 @@ class DataPreprocessor:
             train_df, 
             transform=self.create_transforms(is_train=True),
             config=self.config,
-            data_preprocessor=self  # Pass reference for class weights
+            data_preprocessor=self
         )
         
         val_dataset = BreastThermographyDataset(
             val_df,
             transform=self.create_transforms(is_train=False),
             config=self.config,
-            data_preprocessor=self  # Pass reference for class weights
+            data_preprocessor=self
         )
         
         # Calculate weights for weighted random sampler
         train_labels = train_df['label'].values
         class_sample_count = np.array([len(np.where(train_labels == t)[0]) for t in np.unique(train_labels)])
         weight = 1. / class_sample_count
-        samples_weight = np.array([weight[t] for t in train_labels])
+        samples_weight = np.array([weight[np.where(np.unique(train_labels) == t)[0][0]] for t in train_labels])
         samples_weight = torch.from_numpy(samples_weight).double()
         
         # Create sampler

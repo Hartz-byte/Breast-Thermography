@@ -18,7 +18,12 @@ import yaml
 class VisualizationUtils:
     """Utility class for creating various visualizations."""
     
-    def __init__(self, config_path: str = "configs/config.yaml"):
+    def __init__(self, config_path: str = None):
+        if config_path is None:
+            # Get the directory of the current file
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            config_path = os.path.join(base_dir, 'configs', 'config.yaml')
+            
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
         
@@ -105,4 +110,42 @@ class VisualizationUtils:
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
         plt.show()
+    
+    def plot_data_statistics(self, df: pd.DataFrame, save_path: str = None):
+        """Plot comprehensive data statistics."""
+        import matplotlib.pyplot as plt
+        import seaborn as sns
 
+        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+        # Label distribution
+        axes[0, 0].pie(df['combined_label'].value_counts().values,
+                   labels=df['combined_label'].value_counts().index,
+                   autopct='%1.1f%%')
+        axes[0, 0].set_title('Overall Label Distribution')
+
+        # Age distribution by label
+        sns.boxplot(data=df, x='combined_label', y='Age(years)', ax=axes[0, 1])
+        axes[0, 1].set_title('Age Distribution by Label')
+
+        # Weight distribution by label
+        sns.boxplot(data=df, x='combined_label', y='Weight (Kg)', ax=axes[0, 2])
+        axes[0, 2].set_title('Weight Distribution by Label')
+
+        # Height distribution by label
+        sns.boxplot(data=df, x='combined_label', y='Height(cm)', ax=axes[1, 0])
+        axes[1, 0].set_title('Height Distribution by Label')
+
+        # Temperature distribution by label
+        sns.boxplot(data=df, x='combined_label', y='Temp(°C)', ax=axes[1, 1])
+        axes[1, 1].set_title('Temperature Distribution by Label')
+
+        # Correlation heatmap
+        numeric_cols = ['Age(years)', 'Weight (Kg)', 'Height(cm)', 'Temp(°C)']
+        corr_matrix = df[numeric_cols].corr()
+        sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', ax=axes[1, 2])
+        axes[1, 2].set_title('Feature Correlation Matrix')
+
+        plt.tight_layout()
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.show()
