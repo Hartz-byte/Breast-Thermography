@@ -1,2 +1,28 @@
 /venv
 /data
+
+# Model files and outputs
+notebooks/outputs/models/
+*.pth
+*.pt
+*.h5
+*.hdf5
+*.pkl
+*.pkl.gz
+*.joblib
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Local development
+.DS_Store
+Thumbs.db
