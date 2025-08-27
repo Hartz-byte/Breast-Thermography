@@ -2,9 +2,9 @@
 
 # Dataset settings
 data:
-  raw_path: "data/raw"  # Parent directory containing Breast-Thermography-Raw
+  raw_path: "data/raw"  # Path to the raw data directory
   processed_path: "data/processed"
-  excel_file: "Diagnostics.xlsx"  # Will be in data/raw/
+  excel_file: "Diagnostics.xlsx"  # Excel file with patient data
   image_size: [224, 224]  # Optimized for RTX 3050
   views: ["anterior", "oblleft", "oblright"]
   # ImageNet normalization by default
@@ -26,7 +26,7 @@ model:
 training:
   batch_size: 4
   learning_rate: 0.0005
-  epochs: 100
+  epochs: 25
   grad_clip: 1.0
   weight_decay: 0.01
   warmup_epochs: 5

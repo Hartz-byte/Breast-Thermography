@@ -178,15 +178,48 @@ class DataPreprocessor:
         Handles only Benign (0) and Malignant (1) classes.
         """
         try:
-            # Construct the full path to the Excel file
+            # Get the base directory (project root)
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            raw_path = os.path.join(base_dir, self.config['data']['raw_path'].replace('/', os.sep))
-            excel_path = os.path.join(raw_path, 'Breast-Thermography-Raw', self.config['data']['excel_file'])
             
-            # Check if file exists
-            if not os.path.exists(excel_path):
-                raise FileNotFoundError(f"Excel file not found at: {excel_path}")
+            # Get paths from config
+            rel_raw_path = self.config['data']['raw_path']
+            excel_file = self.config['data']['excel_file']
+            
+            # Construct possible paths where the Excel file might be located
+            possible_paths = [
+                # Try the direct path from config
+                os.path.normpath(os.path.join(base_dir, rel_raw_path, excel_file)),
+                # Try with just data/raw/Breast-Thermography-Raw
+                os.path.normpath(os.path.join(base_dir, 'data', 'raw', 'Breast-Thermography-Raw', excel_file)),
+                # Try in data/raw directly
+                os.path.normpath(os.path.join(base_dir, 'data', 'raw', excel_file)),
+                # Try the exact path we know exists
+                os.path.normpath(os.path.join(base_dir, 'data', 'raw', 'Breast-Thermography-Raw', 'Diagnostics.xlsx'))
+            ]
+            
+            # Try each possible path
+            excel_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    excel_path = path
+                    break
+            
+            if not excel_path:
+                # List directory contents for debugging
+                print("Could not find Excel file. Searched in:")
+                for path in possible_paths:
+                    parent_dir = os.path.dirname(path)
+                    print(f"- {path} (exists: {os.path.exists(path)})")
+                    if os.path.exists(parent_dir):
+                        print(f"  Directory contents: {os.listdir(parent_dir)}")
                 
+                raise FileNotFoundError(
+                    f"Excel file '{excel_file}' not found in any of the expected locations. "
+                    f"Please ensure the file exists in one of these paths:\n"
+                    + "\n".join(f"- {path}" for path in possible_paths)
+                )
+            
+            print(f"Loading diagnostics from: {excel_path}")
             df = pd.read_excel(excel_path)
             
             # Clean up column names
@@ -375,6 +408,57 @@ class DataPreprocessor:
         ])
         
         return transform
+    
+    def visualize_data_distribution(self, df: pd.DataFrame, save_path: str = None) -> None:
+        """
+        Visualize the distribution of data across classes.
+        
+        Args:
+            df: DataFrame containing the data
+            save_path: Path to save the plot (optional)
+        """
+        try:
+            import matplotlib.pyplot as plt
+            import seaborn as sns
+            
+            # Set style
+            sns.set(style="whitegrid")
+            plt.figure(figsize=(10, 6))
+        
+            # Create a copy to avoid modifying the original
+            plot_df = df.copy()
+            
+            # Map numeric labels to names
+            plot_df['class_name'] = plot_df['label'].map(self.label_names)
+            
+            # Count plot
+            ax = sns.countplot(x='class_name', data=plot_df, 
+                            order=self.label_names.values())
+            
+            # Add counts on top of bars
+            for p in ax.patches:
+                ax.annotate(f'{p.get_height():.0f}', 
+                        (p.get_x() + p.get_width() / 2., p.get_height()),
+                        ha='center', va='center', 
+                        xytext=(0, 10), 
+                        textcoords='offset points')
+            
+            plt.title('Distribution of Classes')
+            plt.xlabel('Class')
+            plt.ylabel('Count')
+            plt.tight_layout()
+            
+            # Save the figure if path is provided
+            if save_path:
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                plt.savefig(save_path, dpi=300, bbox_inches='tight')
+                print(f"Plot saved to {save_path}")
+                
+            plt.show()
+            
+        except Exception as e:
+            self.logger.error(f"Error in visualize_data_distribution: {str(e)}")
+            raise
     
     def save_processed_data(self, df: pd.DataFrame, output_dir: str = None) -> None:
         """Save processed data with proper directory structure."""
