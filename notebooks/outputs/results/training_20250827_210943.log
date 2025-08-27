@@ -1,0 +1,40 @@
+2025-08-27 21:09:43,352 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 21:09:43,909 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 21:09:44,485 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 21:09:46,103 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 21:09:46,104 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 21:09:46,148 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 21:09:46,150 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 21:09:46,151 - INFO - 
+==================================================
+2025-08-27 21:09:46,152 - INFO - DATASET SUMMARY
+2025-08-27 21:09:46,153 - INFO - ==================================================
+2025-08-27 21:09:46,154 - INFO - Total samples: 119
+2025-08-27 21:09:46,155 - INFO - Class distribution:
+2025-08-27 21:09:46,156 - INFO -   - Benign: 84 samples
+2025-08-27 21:09:46,157 - INFO -   - Malignant: 35 samples
+2025-08-27 21:09:46,161 - INFO - 
+--------------------------------------------------
+2025-08-27 21:09:46,162 - INFO - Training samples: 95
+2025-08-27 21:09:46,163 - INFO - Validation samples: 24
+2025-08-27 21:09:46,164 - INFO - --------------------------------------------------
+
+2025-08-27 21:09:46,185 - INFO - 
+DATASET DETAILS:
+2025-08-27 21:09:46,186 - INFO - Training samples: 95
+2025-08-27 21:09:46,187 - INFO - Validation samples: 24
+2025-08-27 21:09:46,188 - INFO - Number of classes: 2
+2025-08-27 21:09:46,189 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 21:09:46,189 - INFO - 
+Saving processed data...
+2025-08-27 21:09:48,356 - INFO - Processed data saved successfully.
+2025-08-27 21:09:48,359 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 21:09:48,360 - INFO - Batch size: 4
+2025-08-27 21:09:48,361 - INFO - Number of workers: 4
+2025-08-27 21:09:48,362 - INFO - CUDA available: True
+2025-08-27 21:09:48,363 - INFO - 
+==================================================
+2025-08-27 21:09:48,364 - INFO - DATASET CREATION COMPLETE
+2025-08-27 21:09:48,365 - INFO - ==================================================
+

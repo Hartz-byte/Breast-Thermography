@@ -44,107 +44,146 @@ class BreastThermographyDataset(Dataset):
     def __len__(self) -> int:
         return len(self.data_df)
         
+    def _load_single_image(self, img_path: str, target_size: tuple = (224, 224)) -> np.ndarray:
+        """Load and preprocess a single image."""
+        try:
+            if not os.path.exists(img_path) or not os.access(img_path, os.R_OK):
+                return None
+                
+            # Read image
+            image = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            if image is None:
+                raise ValueError(f"Failed to read image at {img_path}")
+                
+            # Convert color space
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            
+            # Resize if needed
+            if image.shape[:2] != target_size:
+                image = cv2.resize(image, target_size, interpolation=cv2.INTER_AREA)
+                
+            return image
+            
+        except Exception as e:
+            logging.error(f"Error loading image {img_path}: {str(e)}")
+            return None
+    
     def __getitem__(self, idx: int) -> Dict[str, Any]:
-        processed_images = []
         row = self.data_df.iloc[idx]
-        # Ensure patient_id is a string and strip any whitespace
         patient_id = str(row['Image']).strip()
-        label = int(row['label'])  # Ensure label is an integer (0 or 1)
+        label = int(row['label'])
         
-        # Validate label is within expected range
+        # Validate label
         if label not in self.class_to_folder:
             logging.warning(f"Invalid label {label} for patient {patient_id}, defaulting to Benign (0)")
-            label = 0  # Default to Benign for any invalid labels
+            label = 0
         
-        # Get class folder name
         class_folder = self.class_to_folder[label]
+        target_size = tuple(self.config.get('data', {}).get('image_size', [224, 224]))
+        processed_views = []
+        missing_views = []
         
-        # Load all three views
-        images = []
-        missing_views = 0
-        
-        target_size = self.config.get('data', {}).get('image_size', [224, 224])
+        # Load each view
         for view in self.views:
-            # Construct filename
-            filename = f"{patient_id}_{view}.jpg"
-            # Build path components as strings
-            path_components = [
-                str(self.config.get('data', {}).get('raw_path', '')).strip(),
-                'Breast-Thermography-Raw',
-                class_folder,
-                patient_id,
-                filename
+            # Try multiple possible paths
+            possible_paths = [
+                os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    self.config['data']['raw_path'].lstrip('./'),
+                    'Breast-Thermography-Raw',
+                    class_folder,
+                    patient_id,
+                    f"{patient_id}_{view}.jpg"
+                ),
+                os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    'data', 'raw', 'Breast-Thermography-Raw',
+                    class_folder,
+                    patient_id,
+                    f"{patient_id}_{view}.jpg"
+                )
             ]
             
-            # Filter out any empty path components
-            path_components = [str(pc) for pc in path_components if pc]
-            # Join path components
-            img_path = os.path.join(*path_components)
+            # Try each possible path
+            image = None
+            for img_path in possible_paths:
+                image = self._load_single_image(img_path, target_size)
+                if image is not None:
+                    break
             
-            try:
-                if os.path.exists(img_path) and os.access(img_path, os.R_OK):
-                    image = cv2.imread(img_path)
-                    if image is None:
-                        raise ValueError(f"Failed to read image at {img_path}")
-                    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                    if image.shape != target_size or image.shape != target_size:
-                        image = cv2.resize(image, (target_size, target_size))
+            if image is None:
+                missing_views.append(view)
+                # Instead of zeros, we'll handle missing views after processing all views
+                processed_views.append(None)
+                continue
+                
+            # Apply transforms if specified
+            if self.transform:
+                if isinstance(self.transform, dict):
+                    transform = self.transform.get(label, self.transform.get(0))
                 else:
-                    missing_views += 1
-                    image = np.zeros((*target_size, 3), dtype=np.uint8)
-                    
-                # Apply transforms to each view individually
-                if self.transform:
-                    if isinstance(self.transform, dict):
-                        transform = self.transform.get(label, self.transform.get(0))
-                        if transform:
-                            augmented = transform(image=image)
-                            image = augmented['image']
-                    else:
-                        augmented = self.transform(image=image)
+                    transform = self.transform
+                
+                if transform:
+                    try:
+                        augmented = transform(image=image)
                         image = augmented['image']
-                
-                # Ensure image is a tensor with correct shape (3, 224, 224)
-                if not isinstance(image, torch.Tensor):
-                    image = torch.from_numpy(image).float()
-                    if len(image.shape) == 3 and image.shape == 3:  # HWC format
-                        image = image.permute(2, 0, 1)  # Convert to CHW
-                
-                # Verify shape is correct
-                if image.shape != (3, 224, 224):
-                    logging.warning(f"Unexpected image shape {image.shape} for {patient_id}_{view}")
-                    image = torch.zeros((3, 224, 224), dtype=torch.float32)
-                    
-                processed_images.append(image)
-                
-            except Exception as e:
-                missing_views += 1
-                logging.error(f"Error loading {img_path}: {str(e)}")
-                processed_images.append(torch.zeros((3, 224, 224), dtype=torch.float32))
-        
-        # Log warning for missing views
-        if missing_views > 0:
-            logging.warning(f"Patient {patient_id} is missing {missing_views} view(s) out of {len(self.views)}")
-        
-        # Concatenate along channel dimension: (3, 224, 224) x 3 -> (9, 224, 224)
-        try:
-            combined_image = torch.cat(processed_images, dim=0)  # Concatenate along channel dimension
+                    except Exception as e:
+                        logging.error(f"Error applying transform to {patient_id}_{view}: {str(e)}")
+                        missing_views.append(view)
+                        processed_views.append(None)
+                        continue
             
-            # Verify final shape
-            expected_shape = (9, 224, 224)
-            if combined_image.shape != expected_shape:
-                logging.error(f"Incorrect combined shape {combined_image.shape}, expected {expected_shape}")
-                combined_image = torch.zeros(expected_shape, dtype=torch.float32)
+            # Convert to tensor if not already
+            if not isinstance(image, torch.Tensor):
+                image = torch.from_numpy(image).float()
+                if image.dim() == 3 and image.shape[2] == 3:  # HWC to CHW
+                    image = image.permute(2, 0, 1)
+            
+            # Normalize to [0, 1] if needed
+            if image.max() > 1.0:
+                image = image / 255.0
+                
+            processed_views.append(image)
+        
+        # Handle missing views by duplicating available views
+        if None in processed_views:
+            available_views = [v for v in processed_views if v is not None]
+            if not available_views:
+                # If no views available, use zeros
+                processed_views = [torch.zeros((3, *target_size), dtype=torch.float32) for _ in self.views]
+                logging.warning(f"No views available for patient {patient_id}, using zero tensors")
+            else:
+                # Fill missing views with available ones (circular)
+                for i, view in enumerate(processed_views):
+                    if view is None:
+                        processed_views[i] = available_views[i % len(available_views)]
+                
+                logging.warning(f"Patient {patient_id} is missing views: {missing_views}, using available views")
+        
+        # Concatenate all views along channel dimension
+        try:
+            combined_image = torch.cat(processed_views, dim=0)
+            if combined_image.shape != (9, *target_size):
+                raise ValueError(f"Unexpected shape after concatenation: {combined_image.shape}")
                 
         except Exception as e:
-            logging.error(f"Error concatenating images for patient {patient_id}: {str(e)}")
-            combined_image = torch.zeros((9, 224, 224), dtype=torch.float32)
+            logging.error(f"Error concatenating views for {patient_id}: {str(e)}")
+            combined_image = torch.zeros((9, *target_size), dtype=torch.float32)
+        
+        # Get temperature if available
+        temp = 0.0
+        if 'Temp(°C)' in row and pd.notna(row['Temp(°C)']):
+            try:
+                temp = float(row['Temp(°C)'])
+            except (ValueError, TypeError):
+                pass
         
         return {
             'image': combined_image,
             'label': label,
             'patient_id': patient_id,
-            'temp': torch.tensor(row['Temp(°C)'], dtype=torch.float32) if 'Temp(°C)' in row else torch.tensor(0.0, dtype=torch.float32)
+            'temp': torch.tensor(temp, dtype=torch.float32)
         }
 
 class DataPreprocessor:

@@ -375,65 +375,93 @@ class Trainer:
         
         return epoch_loss, epoch_acc
 
-def save_checkpoint(self, model: nn.Module, optimizer: optim.Optimizer, 
-                   epoch: int, best_val_loss: float, is_best: bool = False):
-    """Save model checkpoint."""
-    checkpoint = {
-        'epoch': epoch,
-        'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'best_val_loss': best_val_loss,
-        'config': self.config
-    }
+    def save_checkpoint(self, model: nn.Module, optimizer: optim.Optimizer, 
+                       epoch: int, best_train_acc: float, is_best: bool = False):
+        """Save model checkpoint."""
+        # Ensure output directory exists
+        os.makedirs(self.config['output']['model_dir'], exist_ok=True)
+        
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'best_train_acc': best_train_acc,
+            'train_losses': self.train_losses,
+            'val_losses': self.val_losses,
+            'train_accuracies': self.train_accuracies,
+            'val_accuracies': self.val_accuracies,
+            'config': self.config
+        }
+        
+        # Save latest checkpoint
+        checkpoint_path = os.path.join(self.config['output']['model_dir'], 'latest_checkpoint.pth')
+        torch.save(checkpoint, checkpoint_path)
+        self.logger.info(f"💾 Saved checkpoint for epoch {epoch+1}")
+        
+        # Save best model
+        if is_best:
+            best_path = os.path.join(self.config['output']['model_dir'], 'best_model.pth')
+            torch.save(checkpoint, best_path)
+            self.logger.info(f"🏆 New best model saved! Training Acc: {best_train_acc*100:.2f}% at epoch {epoch+1}")
+            
+            # Save a copy with timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            timestamped_path = os.path.join(
+                self.config['output']['model_dir'], 
+                f'best_model_acc_{best_train_acc*100:.2f}_epoch_{epoch+1}_{timestamp}.pth'
+            )
+            torch.save(checkpoint, timestamped_path)
+            self.logger.info(f"📌 Saved timestamped best model: {os.path.basename(timestamped_path)}")
     
-    # Save latest checkpoint
-    checkpoint_path = os.path.join(self.config['output']['model_dir'], 'latest_checkpoint.pth')
-    torch.save(checkpoint, checkpoint_path)
-    
-    # Save best model
-    if is_best:
-        best_path = os.path.join(self.config['output']['model_dir'], 'best_model.pth')
-        torch.save(checkpoint, best_path)
-        self.logger.info(f"New best model saved with validation loss: {best_val_loss:.4f}")
-
-def plot_training_history(self):
-    """Plot and save training history."""
-    fig, axes = plt.subplots(1, 2, figsize=(15, 5))
-    
-    # Loss plot
-    axes[0].plot(self.train_losses, label='Train Loss', color='blue')
-    axes[0].plot(self.val_losses, label='Validation Loss', color='red')
-    axes[0].set_title('Training and Validation Loss')
-    axes[0].set_xlabel('Epoch')
-    axes[0].set_ylabel('Loss')
-    axes[0].legend()
-    axes[0].grid(True)
-    
-    # Accuracy plot
-    axes[1].plot(self.train_accuracies, label='Train Accuracy', color='blue')
-    axes[1].plot(self.val_accuracies, label='Validation Accuracy', color='red')
-    axes[1].set_title('Training and Validation Accuracy')
-    axes[1].set_xlabel('Epoch')
-    axes[1].set_ylabel('Accuracy')
-    axes[1].legend()
-    axes[1].grid(True)
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(self.config['output']['plot_dir'], 'training_history.png'), 
-               dpi=300, bbox_inches='tight')
-    plt.show()
+    def plot_training_history(self):
+        """Plot and save training history."""
+        if not self.train_losses or not self.val_losses:
+            self.logger.warning("No training history to plot")
+            return
+            
+        # Create plot directory if it doesn't exist
+        os.makedirs(self.config['output']['plot_dir'], exist_ok=True)
+        
+        plt.figure(figsize=(15, 5))
+        
+        # Plot 1: Loss
+        plt.subplot(1, 2, 1)
+        plt.plot(self.train_losses, label='Train Loss', color='blue')
+        plt.plot(self.val_losses, label='Validation Loss', color='red')
+        plt.title('Training and Validation Loss')
+        plt.xlabel('Epoch')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid(True)
+        
+        # Plot 2: Accuracy
+        plt.subplot(1, 2, 2)
+        plt.plot(self.train_accuracies, label='Train Accuracy', color='blue')
+        plt.plot(self.val_accuracies, label='Validation Accuracy', color='red')
+        plt.title('Training and Validation Accuracy')
+        plt.xlabel('Epoch')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.grid(True)
+        
+        # Save and show the plot
+        plt.tight_layout()
+        plot_path = os.path.join(self.config['output']['plot_dir'], 'training_history.png')
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        self.logger.info(f"Saved training history plot to {plot_path}")
+        plt.close()  # Close the figure to free memory
 
     def train(self) -> HybridCNNViT:
         """Main training function.
         
         Returns:
-            HybridCNNViT: The trained model with the best validation performance.
+            HybridCNNViT: The trained model with the best training accuracy.
             
         This method orchestrates the entire training process including:
         - Data preparation
         - Model and training components initialization
         - Training and validation loops
-        - Checkpointing and early stopping
+        - Checkpointing and early stopping based on training accuracy
         """
         self.logger.info("Starting training...")
         
@@ -448,8 +476,13 @@ def plot_training_history(self):
         scaler = GradScaler()
         early_stopping = EarlyStopping(patience=10, min_delta=0.001)
         
-        # Training loop
-        best_val_loss = float('inf')
+        # Training state
+        best_train_acc = 0.0
+        best_metrics = {}
+        
+        # Create figure for live updating plots
+        plt.ion()  # Enable interactive mode
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
         
         for epoch in range(self.config['training']['epochs']):
             start_time = time.time()
@@ -471,30 +504,112 @@ def plot_training_history(self):
             
             # Logging
             epoch_time = time.time() - start_time
-            self.logger.info(
+            log_msg = (
                 f"Epoch {epoch+1}/{self.config['training']['epochs']} - "
                 f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, "
                 f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, "
                 f"Time: {epoch_time:.2f}s"
             )
+            self.logger.info(log_msg)
             
-            # Save checkpoint
-            is_best = val_loss < best_val_loss
+            # Check for best model based on training accuracy
+            is_best = train_acc > best_train_acc
             if is_best:
-                best_val_loss = val_loss
+                best_train_acc = train_acc
+                best_metrics = {
+                    'train_loss': train_loss,
+                    'val_loss': val_loss,
+                    'val_acc': val_acc,
+                    'epoch': epoch,
+                    'classification_report': val_metrics.get('classification_report', {})
+                }
+                self.logger.info(f"🎯 New best training accuracy: {best_train_acc*100:.2f}%")
             
-            self.save_checkpoint(model, optimizer, epoch, best_val_loss, is_best)
+            # Save checkpoint (both latest and best if applicable)
+            self.save_checkpoint(model, optimizer, epoch, best_train_acc, is_best)
+            
+            # Update plots
+            self._update_plots(fig, ax1, ax2)
             
             # Early stopping
             if early_stopping(val_loss, model):
                 self.logger.info(f"Early stopping triggered at epoch {epoch+1}")
                 break
         
-        # Plot training history
-        self.plot_training_history()
+        # Final update of plots
+        self._update_plots(fig, ax1, ax2, save=True)
+        plt.ioff()
+        plt.close()
         
-        self.logger.info("Training completed!")
+        # Load best model weights
+        best_model_path = os.path.join(self.config['output']['model_dir'], 'best_model.pth')
+        if os.path.exists(best_model_path):
+            checkpoint = torch.load(best_model_path, map_location=self.device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            self.logger.info("\n✅ Loaded best model weights from checkpoint")
+            
+            # Log best metrics in a clear format
+            self.logger.info("\n" + "="*70)
+            self.logger.info("🏆 Best Model Performance (Based on Training Accuracy)")
+            self.logger.info("="*70)
+            self.logger.info(f"📊 Epoch: {best_metrics['epoch'] + 1}")
+            self.logger.info(f"📉 Training Loss: {best_metrics['train_loss']:.4f}")
+            self.logger.info(f"📈 Validation Loss: {best_metrics['val_loss']:.4f}")
+            self.logger.info(f"🎯 Training Accuracy: {best_train_acc*100:.2f}%")
+            self.logger.info(f"🏅 Validation Accuracy: {best_metrics['val_acc']*100:.2f}%")
+            
+            # Log classification report if available
+            if 'classification_report' in best_metrics and best_metrics['classification_report']:
+                self.logger.info("\n📋 Classification Report:")
+                report = best_metrics['classification_report']
+                if 'accuracy' in report:
+                    self.logger.info(f"   - Overall Accuracy: {report['accuracy']*100:.2f}%")
+                if 'weighted avg' in report:
+                    avg = report['weighted avg']
+                    self.logger.info(f"   - Weighted Avg - Precision: {avg['precision']:.4f}, "
+                                  f"Recall: {avg['recall']:.4f}, F1: {avg['f1-score']:.4f}")
+            self.logger.info("="*70 + "\n")
+            
         return model
+        
+    def _update_plots(self, fig, ax1, ax2, save=False):
+        """Update training plots in real-time."""
+        if not self.train_losses or not self.val_losses:
+            return
+            
+        # Clear previous plots
+        ax1.clear()
+        ax2.clear()
+        
+        epochs = range(1, len(self.train_losses) + 1)
+        
+        # Plot loss
+        ax1.plot(epochs, self.train_losses, 'b-', label='Train Loss')
+        ax1.plot(epochs, self.val_losses, 'r-', label='Val Loss')
+        ax1.set_title('Training and Validation Loss')
+        ax1.set_xlabel('Epochs')
+        ax1.set_ylabel('Loss')
+        ax1.legend()
+        ax1.grid(True)
+        
+        # Plot accuracy
+        ax2.plot(epochs, self.train_accuracies, 'b-', label='Train Acc')
+        ax2.plot(epochs, self.val_accuracies, 'r-', label='Val Acc')
+        ax2.set_title('Training and Validation Accuracy')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Accuracy')
+        ax2.legend()
+        ax2.grid(True)
+        
+        plt.tight_layout()
+        
+        # Save plot if requested
+        if save:
+            plot_path = os.path.join(self.config['output']['plot_dir'], 'training_history.png')
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            self.logger.info(f"Saved final training plots to {plot_path}")
+        
+        plt.pause(0.1)  # Pause to update the plot
 
 def main():
     """Main function to initialize and run the trainer."""
