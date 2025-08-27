@@ -1,0 +1,81 @@
+2025-08-27 05:25:30,687 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:25:31,237 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:25:31,934 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:25:34,074 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:25:34,075 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:25:34,118 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:25:34,119 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:25:34,121 - INFO - 
+==================================================
+2025-08-27 05:25:34,122 - INFO - DATASET SUMMARY
+2025-08-27 05:25:34,122 - INFO - ==================================================
+2025-08-27 05:25:34,123 - INFO - Total samples: 119
+2025-08-27 05:25:34,124 - INFO - Class distribution:
+2025-08-27 05:25:34,125 - INFO -   - Benign: 84 samples
+2025-08-27 05:25:34,126 - INFO -   - Malignant: 35 samples
+2025-08-27 05:25:34,134 - INFO - 
+--------------------------------------------------
+2025-08-27 05:25:34,136 - INFO - Training samples: 95
+2025-08-27 05:25:34,137 - INFO - Validation samples: 24
+2025-08-27 05:25:34,137 - INFO - --------------------------------------------------
+
+2025-08-27 05:25:34,160 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:25:34,161 - INFO - Training samples: 95
+2025-08-27 05:25:34,162 - INFO - Validation samples: 24
+2025-08-27 05:25:34,163 - INFO - Number of classes: 2
+2025-08-27 05:25:34,164 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:25:34,165 - INFO - 
+Saving processed data...
+2025-08-27 05:25:36,346 - INFO - Processed data saved successfully.
+2025-08-27 05:25:36,349 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:25:36,350 - INFO - Batch size: 8
+2025-08-27 05:25:36,350 - INFO - Number of workers: 4
+2025-08-27 05:25:36,351 - INFO - CUDA available: True
+2025-08-27 05:25:36,352 - INFO - 
+==================================================
+2025-08-27 05:25:36,353 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:25:36,354 - INFO - ==================================================
+
+2025-08-27 05:27:06,428 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:27:06,745 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:27:06,989 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:27:07,028 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:27:07,029 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:27:07,063 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:27:07,064 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:27:07,065 - INFO - 
+==================================================
+2025-08-27 05:27:07,066 - INFO - DATASET SUMMARY
+2025-08-27 05:27:07,067 - INFO - ==================================================
+2025-08-27 05:27:07,067 - INFO - Total samples: 119
+2025-08-27 05:27:07,068 - INFO - Class distribution:
+2025-08-27 05:27:07,069 - INFO -   - Benign: 84 samples
+2025-08-27 05:27:07,070 - INFO -   - Malignant: 35 samples
+2025-08-27 05:27:07,073 - INFO - 
+--------------------------------------------------
+2025-08-27 05:27:07,074 - INFO - Training samples: 95
+2025-08-27 05:27:07,075 - INFO - Validation samples: 24
+2025-08-27 05:27:07,076 - INFO - --------------------------------------------------
+
+2025-08-27 05:27:07,090 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:27:07,091 - INFO - Training samples: 95
+2025-08-27 05:27:07,092 - INFO - Validation samples: 24
+2025-08-27 05:27:07,093 - INFO - Number of classes: 2
+2025-08-27 05:27:07,093 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:27:07,094 - INFO - 
+Saving processed data...
+2025-08-27 05:27:09,243 - INFO - Processed data saved successfully.
+2025-08-27 05:27:09,246 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:27:09,247 - INFO - Batch size: 8
+2025-08-27 05:27:09,248 - INFO - Number of workers: 4
+2025-08-27 05:27:09,249 - INFO - CUDA available: True
+2025-08-27 05:27:09,249 - INFO - 
+==================================================
+2025-08-27 05:27:09,250 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:27:09,251 - INFO - ==================================================
+
+2025-08-27 05:27:09,265 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0089/IIR0089_anterior.jpg: cannot access local variable 'target_size' where it is not associated with a value

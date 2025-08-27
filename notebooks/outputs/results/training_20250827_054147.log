@@ -1,0 +1,41 @@
+2025-08-27 05:41:47,835 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:41:48,349 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:41:48,904 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:41:50,684 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:41:50,685 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:41:50,728 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:41:50,729 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:41:50,732 - INFO - 
+==================================================
+2025-08-27 05:41:50,732 - INFO - DATASET SUMMARY
+2025-08-27 05:41:50,734 - INFO - ==================================================
+2025-08-27 05:41:50,734 - INFO - Total samples: 119
+2025-08-27 05:41:50,735 - INFO - Class distribution:
+2025-08-27 05:41:50,737 - INFO -   - Benign: 84 samples
+2025-08-27 05:41:50,738 - INFO -   - Malignant: 35 samples
+2025-08-27 05:41:50,746 - INFO - 
+--------------------------------------------------
+2025-08-27 05:41:50,747 - INFO - Training samples: 95
+2025-08-27 05:41:50,748 - INFO - Validation samples: 24
+2025-08-27 05:41:50,749 - INFO - --------------------------------------------------
+
+2025-08-27 05:41:50,771 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:41:50,773 - INFO - Training samples: 95
+2025-08-27 05:41:50,774 - INFO - Validation samples: 24
+2025-08-27 05:41:50,775 - INFO - Number of classes: 2
+2025-08-27 05:41:50,777 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:41:50,778 - INFO - 
+Saving processed data...
+2025-08-27 05:41:52,957 - INFO - Processed data saved successfully.
+2025-08-27 05:41:52,961 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:41:52,963 - INFO - Batch size: 8
+2025-08-27 05:41:52,964 - INFO - Number of workers: 4
+2025-08-27 05:41:52,966 - INFO - CUDA available: True
+2025-08-27 05:41:52,967 - INFO - 
+==================================================
+2025-08-27 05:41:52,968 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:41:52,969 - INFO - ==================================================
+
+2025-08-27 05:41:52,981 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0044/IIR0044_anterior.jpg: cannot access local variable 'target_size' where it is not associated with a value

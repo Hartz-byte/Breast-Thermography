@@ -1,0 +1,48 @@
+2025-08-27 05:51:38,510 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:51:38,996 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:51:39,610 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:51:41,261 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:51:41,262 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:51:41,303 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:51:41,304 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:51:41,307 - INFO - 
+==================================================
+2025-08-27 05:51:41,308 - INFO - DATASET SUMMARY
+2025-08-27 05:51:41,309 - INFO - ==================================================
+2025-08-27 05:51:41,309 - INFO - Total samples: 119
+2025-08-27 05:51:41,310 - INFO - Class distribution:
+2025-08-27 05:51:41,312 - INFO -   - Benign: 84 samples
+2025-08-27 05:51:41,312 - INFO -   - Malignant: 35 samples
+2025-08-27 05:51:41,319 - INFO - 
+--------------------------------------------------
+2025-08-27 05:51:41,320 - INFO - Training samples: 95
+2025-08-27 05:51:41,321 - INFO - Validation samples: 24
+2025-08-27 05:51:41,322 - INFO - --------------------------------------------------
+
+2025-08-27 05:51:41,342 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:51:41,343 - INFO - Training samples: 95
+2025-08-27 05:51:41,344 - INFO - Validation samples: 24
+2025-08-27 05:51:41,344 - INFO - Number of classes: 2
+2025-08-27 05:51:41,345 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:51:41,346 - INFO - 
+Saving processed data...
+2025-08-27 05:51:43,505 - INFO - Processed data saved successfully.
+2025-08-27 05:51:43,508 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:51:43,509 - INFO - Batch size: 8
+2025-08-27 05:51:43,509 - INFO - Number of workers: 4
+2025-08-27 05:51:43,510 - INFO - CUDA available: True
+2025-08-27 05:51:43,511 - INFO - 
+==================================================
+2025-08-27 05:51:43,512 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:51:43,513 - INFO - ==================================================
+
+2025-08-27 05:51:43,582 - WARNING - Patient IIR0050 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,594 - WARNING - Patient IIR0014 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,601 - WARNING - Patient IIR0016 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,606 - WARNING - Patient IIR0077 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,612 - WARNING - Patient IIR0001 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,618 - WARNING - Patient IIR0055 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,624 - WARNING - Patient IIR0079 is missing 3 view(s) out of 3
+2025-08-27 05:51:43,630 - WARNING - Patient IIR0119 is missing 3 view(s) out of 3

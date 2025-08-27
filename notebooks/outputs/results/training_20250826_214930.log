@@ -1,0 +1,125 @@
+2025-08-26 21:49:30,382 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-26 21:49:30,896 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-26 21:49:31,993 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-26 21:49:33,184 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-26 21:49:33,185 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-26 21:49:33,226 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-26 21:49:33,228 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-26 21:49:33,229 - INFO - 
+==================================================
+2025-08-26 21:49:33,230 - INFO - DATASET SUMMARY
+2025-08-26 21:49:33,231 - INFO - ==================================================
+2025-08-26 21:49:33,232 - INFO - Total samples: 119
+2025-08-26 21:49:33,233 - INFO - Class distribution:
+2025-08-26 21:49:33,234 - INFO -   - Benign: 84 samples
+2025-08-26 21:49:33,235 - INFO -   - Malignant: 35 samples
+2025-08-26 21:49:33,273 - INFO - 
+--------------------------------------------------
+2025-08-26 21:49:33,274 - INFO - Training samples: 95
+2025-08-26 21:49:33,275 - INFO - Validation samples: 24
+2025-08-26 21:49:33,276 - INFO - --------------------------------------------------
+
+2025-08-26 21:49:33,298 - INFO - 
+DATASET DETAILS:
+2025-08-26 21:49:33,300 - INFO - Training samples: 95
+2025-08-26 21:49:33,301 - INFO - Validation samples: 24
+2025-08-26 21:49:33,301 - INFO - Number of classes: 2
+2025-08-26 21:49:33,302 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-26 21:49:33,304 - INFO - 
+Saving processed data...
+2025-08-26 21:49:33,337 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0013/IIR0013_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:33,444 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0052/IIR0052_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:33,762 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0088/IIR0088_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:33,869 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0078/IIR0078_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,081 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0099/IIR0099_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,188 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0070/IIR0070_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,294 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0040/IIR0040_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,506 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0066/IIR0066_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,613 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0010/IIR0010_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,720 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0104/IIR0104_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:34,827 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0105/IIR0105_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,041 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0057/IIR0057_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,149 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0064/IIR0064_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,255 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0056/IIR0056_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,468 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0021/IIR0021_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,890 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0079/IIR0079_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:35,996 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0027/IIR0027_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,103 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0058/IIR0058_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,210 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0077/IIR0077_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,316 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0074/IIR0074_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,423 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0089/IIR0089_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,531 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0119/IIR0119_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,638 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0112/IIR0112_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,744 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0038/IIR0038_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,850 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0034/IIR0034_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:36,957 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0029/IIR0029_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,065 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0093/IIR0093_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,173 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0110/IIR0110_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,279 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0016/IIR0016_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,385 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0055/IIR0055_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,492 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0049/IIR0049_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,599 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0042/IIR0042_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,705 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0111/IIR0111_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,812 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0114/IIR0114_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:37,920 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0041/IIR0041_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,133 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0103/IIR0103_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,240 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0037/IIR0037_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,346 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0076/IIR0076_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,453 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0001/IIR0001_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,559 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0118/IIR0118_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,666 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0012/IIR0012_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,878 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0028/IIR0028_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:38,985 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0031/IIR0031_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,090 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0017/IIR0017_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,196 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0072/IIR0072_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,303 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0018/IIR0018_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,516 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0117/IIR0117_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,622 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0069/IIR0069_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,729 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0032/IIR0032_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:39,942 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0050/IIR0050_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,049 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0011/IIR0011_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,156 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0051/IIR0051_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,263 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0054/IIR0054_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,371 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0071/IIR0071_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,478 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0065/IIR0065_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,585 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0101/IIR0101_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,692 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0047/IIR0047_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:40,905 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0007/IIR0007_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,012 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0008/IIR0008_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,120 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0081/IIR0081_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,226 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0116/IIR0116_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,334 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0085/IIR0085_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,441 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0030/IIR0030_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,547 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0091/IIR0091_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,653 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0014/IIR0014_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:41,971 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0004/IIR0004_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,079 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0092/IIR0092_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,187 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0036/IIR0036_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,294 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0009/IIR0009_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,403 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0075/IIR0075_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,510 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0094/IIR0094_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,723 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0053/IIR0053_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:42,935 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0083/IIR0083_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,148 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0035/IIR0035_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,255 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0025/IIR0025_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,362 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0024/IIR0024_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,467 - INFO - Processed data saved successfully.
+2025-08-26 21:49:43,474 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-26 21:49:43,475 - INFO - Batch size: 8
+2025-08-26 21:49:43,476 - INFO - Number of workers: 4
+2025-08-26 21:49:43,477 - INFO - CUDA available: True
+2025-08-26 21:49:43,478 - INFO - 
+==================================================
+2025-08-26 21:49:43,480 - INFO - DATASET CREATION COMPLETE
+2025-08-26 21:49:43,481 - INFO - ==================================================
+
+2025-08-26 21:49:43,641 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0065/IIR0065_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,642 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0040/IIR0040_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,660 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0005/IIR0005_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,661 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0112/IIR0112_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,668 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0018/IIR0018_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,683 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0074/IIR0074_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,689 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Malignant/IIR0036/IIR0036_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,701 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0091/IIR0091_anterior.jpg: 'dict' object is not callable
+2025-08-26 21:49:43,704 - ERROR - Error loading data/raw/Breast-Thermography-Raw/Benign/IIR0055/IIR0055_anterior.jpg: 'dict' object is not callable

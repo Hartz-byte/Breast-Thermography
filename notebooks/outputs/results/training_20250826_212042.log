@@ -1,0 +1,20 @@
+2025-08-26 21:20:42,677 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-26 21:20:43,272 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-26 21:20:43,829 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-26 21:20:45,524 - INFO - Class distribution: {1: 84, 2: 35}
+2025-08-26 21:20:45,525 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-26 21:20:45,568 - INFO - Class distribution: {1: 84, 2: 35}
+2025-08-26 21:20:45,569 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-26 21:20:45,571 - INFO - Total samples: 119
+2025-08-26 21:20:45,572 - INFO - Class distribution:
+{1: 84, 2: 35}
+2025-08-26 21:20:45,577 - INFO - Training samples: 95
+2025-08-26 21:20:45,579 - INFO - Validation samples: 24
+2025-08-26 21:20:45,599 - ERROR - Error creating datasets: 'DataPreprocessor' object has no attribute 'class_to_folder'
+Traceback (most recent call last):
+  File "/mnt/d/ML/Projects/Breast-Thermography/src/data_prep.py", line 461, in create_datasets
+    self.save_processed_data(df)
+  File "/mnt/d/ML/Projects/Breast-Thermography/src/data_prep.py", line 333, in save_processed_data
+    label_to_class = {v: k for k, v in self.class_to_folder.items()}
+                                       ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'DataPreprocessor' object has no attribute 'class_to_folder'

@@ -1,0 +1,288 @@
+2025-08-27 05:56:31,941 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:56:32,450 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:56:33,015 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:56:34,664 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:56:34,665 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:56:34,709 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:56:34,710 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:56:34,711 - INFO - 
+==================================================
+2025-08-27 05:56:34,712 - INFO - DATASET SUMMARY
+2025-08-27 05:56:34,713 - INFO - ==================================================
+2025-08-27 05:56:34,713 - INFO - Total samples: 119
+2025-08-27 05:56:34,714 - INFO - Class distribution:
+2025-08-27 05:56:34,715 - INFO -   - Benign: 84 samples
+2025-08-27 05:56:34,716 - INFO -   - Malignant: 35 samples
+2025-08-27 05:56:34,722 - INFO - 
+--------------------------------------------------
+2025-08-27 05:56:34,723 - INFO - Training samples: 95
+2025-08-27 05:56:34,724 - INFO - Validation samples: 24
+2025-08-27 05:56:34,725 - INFO - --------------------------------------------------
+
+2025-08-27 05:56:34,744 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:56:34,745 - INFO - Training samples: 95
+2025-08-27 05:56:34,745 - INFO - Validation samples: 24
+2025-08-27 05:56:34,746 - INFO - Number of classes: 2
+2025-08-27 05:56:34,747 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:56:34,748 - INFO - 
+Saving processed data...
+2025-08-27 05:56:36,900 - INFO - Processed data saved successfully.
+2025-08-27 05:56:36,902 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:56:36,903 - INFO - Batch size: 8
+2025-08-27 05:56:36,904 - INFO - Number of workers: 4
+2025-08-27 05:56:36,905 - INFO - CUDA available: True
+2025-08-27 05:56:36,906 - INFO - 
+==================================================
+2025-08-27 05:56:36,907 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:56:36,908 - INFO - ==================================================
+
+2025-08-27 05:56:36,944 - WARNING - Patient IIR0108 is missing 3 view(s) out of 3
+2025-08-27 05:56:36,955 - WARNING - Patient IIR0094 is missing 3 view(s) out of 3
+2025-08-27 05:56:36,972 - WARNING - Patient IIR0008 is missing 3 view(s) out of 3
+2025-08-27 05:56:36,982 - WARNING - Patient IIR0031 is missing 3 view(s) out of 3
+2025-08-27 05:56:36,991 - WARNING - Patient IIR0011 is missing 3 view(s) out of 3
+2025-08-27 05:56:36,999 - WARNING - Patient IIR0054 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,007 - WARNING - Patient IIR0007 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,015 - WARNING - Patient IIR0081 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,069 - WARNING - Patient IIR0072 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,082 - WARNING - Patient IIR0116 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,095 - WARNING - Patient IIR0029 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,106 - WARNING - Patient IIR0024 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,118 - WARNING - Patient IIR0105 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,126 - WARNING - Patient IIR0032 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,131 - WARNING - Patient IIR0010 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,139 - WARNING - Patient IIR0044 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,182 - WARNING - Patient IIR0066 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,189 - WARNING - Patient IIR0027 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,197 - WARNING - Patient IIR0052 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,205 - WARNING - Patient IIR0085 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,209 - WARNING - Patient IIR0051 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,215 - WARNING - Patient IIR0083 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,221 - WARNING - Patient IIR0060 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,225 - WARNING - Patient IIR0001 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,243 - WARNING - Patient IIR0018 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,251 - WARNING - Patient IIR0017 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,258 - WARNING - Patient IIR0101 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,264 - WARNING - Patient IIR0049 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,269 - WARNING - Patient IIR0012 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,273 - WARNING - Patient IIR0095 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,280 - WARNING - Patient IIR0013 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,284 - WARNING - Patient IIR0020 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,296 - WARNING - Patient IIR0039 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,304 - WARNING - Patient IIR0036 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,310 - WARNING - Patient IIR0115 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,316 - WARNING - Patient IIR0055 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,323 - WARNING - Patient IIR0038 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,329 - WARNING - Patient IIR0074 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,339 - WARNING - Patient IIR0071 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,350 - WARNING - Patient IIR0069 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,363 - WARNING - Patient IIR0004 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,371 - WARNING - Patient IIR0030 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,379 - WARNING - Patient IIR0104 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,389 - WARNING - Patient IIR0035 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,398 - WARNING - Patient IIR0093 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,404 - WARNING - Patient IIR0028 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,413 - WARNING - Patient IIR0062 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,418 - WARNING - Patient IIR0111 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,431 - WARNING - Patient IIR0077 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,435 - WARNING - Patient IIR0037 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,445 - WARNING - Patient IIR0084 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,450 - WARNING - Patient IIR0092 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,456 - WARNING - Patient IIR0098 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,463 - WARNING - Patient IIR0025 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,470 - WARNING - Patient IIR0021 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,475 - WARNING - Patient IIR0114 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,486 - WARNING - Patient IIR0088 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,491 - WARNING - Patient IIR0041 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,498 - WARNING - Patient IIR0046 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,504 - WARNING - Patient IIR0117 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,509 - WARNING - Patient IIR0076 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,514 - WARNING - Patient IIR0118 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,520 - WARNING - Patient IIR0057 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,536 - WARNING - Patient IIR0075 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,568 - WARNING - Patient IIR0053 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,579 - WARNING - Patient IIR0050 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,595 - WARNING - Patient IIR0067 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,600 - WARNING - Patient IIR0058 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,605 - WARNING - Patient IIR0016 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,611 - WARNING - Patient IIR0014 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,619 - WARNING - Patient IIR0103 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,624 - WARNING - Patient IIR0006 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,634 - WARNING - Patient IIR0064 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,642 - WARNING - Patient IIR0059 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,648 - WARNING - Patient IIR0034 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,655 - WARNING - Patient IIR0040 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,662 - WARNING - Patient IIR0089 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,670 - WARNING - Patient IIR0065 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,675 - WARNING - Patient IIR0091 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,683 - WARNING - Patient IIR0102 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,694 - WARNING - Patient IIR0047 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,701 - WARNING - Patient IIR0119 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,710 - WARNING - Patient IIR0070 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,717 - WARNING - Patient IIR0110 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,724 - WARNING - Patient IIR0099 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,728 - WARNING - Patient IIR0042 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,736 - WARNING - Patient IIR0100 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,743 - WARNING - Patient IIR0079 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,819 - WARNING - Patient IIR0023 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,823 - WARNING - Patient IIR0090 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,827 - WARNING - Patient IIR0033 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,830 - WARNING - Patient IIR0043 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,833 - WARNING - Patient IIR0086 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,836 - WARNING - Patient IIR0068 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,840 - WARNING - Patient IIR0048 is missing 3 view(s) out of 3
+2025-08-27 05:56:37,843 - WARNING - Patient IIR0073 is missing 3 view(s) out of 3
+2025-08-27 05:59:41,763 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-27 05:59:42,055 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-27 05:59:42,343 - INFO - Model parameters: {'total': 16145476, 'trainable': 16145476, 'non_trainable': 0}
+2025-08-27 05:59:42,379 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:59:42,381 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:59:42,414 - INFO - Class distribution: {0: 84, 1: 35}
+2025-08-27 05:59:42,415 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]
+2025-08-27 05:59:42,416 - INFO - 
+==================================================
+2025-08-27 05:59:42,417 - INFO - DATASET SUMMARY
+2025-08-27 05:59:42,418 - INFO - ==================================================
+2025-08-27 05:59:42,419 - INFO - Total samples: 119
+2025-08-27 05:59:42,420 - INFO - Class distribution:
+2025-08-27 05:59:42,421 - INFO -   - Benign: 84 samples
+2025-08-27 05:59:42,422 - INFO -   - Malignant: 35 samples
+2025-08-27 05:59:42,426 - INFO - 
+--------------------------------------------------
+2025-08-27 05:59:42,427 - INFO - Training samples: 95
+2025-08-27 05:59:42,428 - INFO - Validation samples: 24
+2025-08-27 05:59:42,429 - INFO - --------------------------------------------------
+
+2025-08-27 05:59:42,440 - INFO - 
+DATASET DETAILS:
+2025-08-27 05:59:42,441 - INFO - Training samples: 95
+2025-08-27 05:59:42,442 - INFO - Validation samples: 24
+2025-08-27 05:59:42,443 - INFO - Number of classes: 2
+2025-08-27 05:59:42,444 - INFO - Class to folder mapping: {0: 'Benign', 1: 'Malignant'}
+2025-08-27 05:59:42,445 - INFO - 
+Saving processed data...
+2025-08-27 05:59:44,632 - INFO - Processed data saved successfully.
+2025-08-27 05:59:44,637 - INFO - 
+DATA LOADER CONFIGURATION:
+2025-08-27 05:59:44,638 - INFO - Batch size: 8
+2025-08-27 05:59:44,639 - INFO - Number of workers: 4
+2025-08-27 05:59:44,640 - INFO - CUDA available: True
+2025-08-27 05:59:44,641 - INFO - 
+==================================================
+2025-08-27 05:59:44,642 - INFO - DATASET CREATION COMPLETE
+2025-08-27 05:59:44,643 - INFO - ==================================================
+
+2025-08-27 05:59:44,653 - WARNING - Patient IIR0057 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,661 - WARNING - Patient IIR0037 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,669 - WARNING - Patient IIR0004 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,677 - WARNING - Patient IIR0118 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,690 - WARNING - Patient IIR0101 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,699 - WARNING - Patient IIR0027 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,709 - WARNING - Patient IIR0046 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,720 - WARNING - Patient IIR0098 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,736 - WARNING - Patient IIR0042 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,742 - WARNING - Patient IIR0066 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,749 - WARNING - Patient IIR0094 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,754 - WARNING - Patient IIR0064 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,761 - WARNING - Patient IIR0074 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,769 - WARNING - Patient IIR0093 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,778 - WARNING - Patient IIR0013 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,787 - WARNING - Patient IIR0056 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,834 - WARNING - Patient IIR0038 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,841 - WARNING - Patient IIR0005 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,848 - WARNING - Patient IIR0006 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,855 - WARNING - Patient IIR0059 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,862 - WARNING - Patient IIR0036 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,870 - WARNING - Patient IIR0032 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,877 - WARNING - Patient IIR0100 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,883 - WARNING - Patient IIR0088 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,896 - WARNING - Patient IIR0053 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,903 - WARNING - Patient IIR0054 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,910 - WARNING - Patient IIR0028 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,916 - WARNING - Patient IIR0077 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,922 - WARNING - Patient IIR0103 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,933 - WARNING - Patient IIR0089 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,942 - WARNING - Patient IIR0114 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,951 - WARNING - Patient IIR0081 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,966 - WARNING - Patient IIR0007 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,973 - WARNING - Patient IIR0035 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,981 - WARNING - Patient IIR0111 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,989 - WARNING - Patient IIR0071 is missing 3 view(s) out of 3
+2025-08-27 05:59:44,998 - WARNING - Patient IIR0084 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,007 - WARNING - Patient IIR0034 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,014 - WARNING - Patient IIR0117 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,021 - WARNING - Patient IIR0099 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,039 - WARNING - Patient IIR0017 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,045 - WARNING - Patient IIR0105 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,051 - WARNING - Patient IIR0049 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,058 - WARNING - Patient IIR0069 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,069 - WARNING - Patient IIR0058 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,081 - WARNING - Patient IIR0031 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,094 - WARNING - Patient IIR0018 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,104 - WARNING - Patient IIR0112 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,118 - WARNING - Patient IIR0091 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,123 - WARNING - Patient IIR0116 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,130 - WARNING - Patient IIR0025 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,137 - WARNING - Patient IIR0119 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,142 - WARNING - Patient IIR0092 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,150 - WARNING - Patient IIR0029 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,155 - WARNING - Patient IIR0047 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,161 - WARNING - Patient IIR0079 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,171 - WARNING - Patient IIR0083 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,178 - WARNING - Patient IIR0024 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,183 - WARNING - Patient IIR0115 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,188 - WARNING - Patient IIR0072 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,191 - WARNING - Patient IIR0078 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,197 - WARNING - Patient IIR0008 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,205 - WARNING - Patient IIR0096 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,212 - WARNING - Patient IIR0021 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,225 - WARNING - Patient IIR0067 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,230 - WARNING - Patient IIR0001 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,237 - WARNING - Patient IIR0044 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,245 - WARNING - Patient IIR0102 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,254 - WARNING - Patient IIR0039 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,260 - WARNING - Patient IIR0011 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,265 - WARNING - Patient IIR0061 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,270 - WARNING - Patient IIR0040 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,283 - WARNING - Patient IIR0010 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,292 - WARNING - Patient IIR0052 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,298 - WARNING - Patient IIR0012 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,306 - WARNING - Patient IIR0020 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,314 - WARNING - Patient IIR0030 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,322 - WARNING - Patient IIR0065 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,328 - WARNING - Patient IIR0041 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,335 - WARNING - Patient IIR0062 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,349 - WARNING - Patient IIR0104 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,358 - WARNING - Patient IIR0110 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,364 - WARNING - Patient IIR0014 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,373 - WARNING - Patient IIR0050 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,377 - WARNING - Patient IIR0016 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,381 - WARNING - Patient IIR0095 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,386 - WARNING - Patient IIR0051 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,391 - WARNING - Patient IIR0009 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,403 - WARNING - Patient IIR0023 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,406 - WARNING - Patient IIR0090 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,408 - WARNING - Patient IIR0033 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,411 - WARNING - Patient IIR0043 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,414 - WARNING - Patient IIR0086 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,416 - WARNING - Patient IIR0068 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,419 - WARNING - Patient IIR0048 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,422 - WARNING - Patient IIR0073 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,540 - WARNING - Patient IIR0026 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,544 - WARNING - Patient IIR0106 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,548 - WARNING - Patient IIR0082 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,551 - WARNING - Patient IIR0063 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,555 - WARNING - Patient IIR0109 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,558 - WARNING - Patient IIR0045 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,561 - WARNING - Patient IIR0107 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,564 - WARNING - Patient IIR0022 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,663 - WARNING - Patient IIR0087 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,667 - WARNING - Patient IIR0002 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,669 - WARNING - Patient IIR0003 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,672 - WARNING - Patient IIR0080 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,675 - WARNING - Patient IIR0097 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,677 - WARNING - Patient IIR0015 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,680 - WARNING - Patient IIR0113 is missing 3 view(s) out of 3
+2025-08-27 05:59:45,683 - WARNING - Patient IIR0019 is missing 3 view(s) out of 3

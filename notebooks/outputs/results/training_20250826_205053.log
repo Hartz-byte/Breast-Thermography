@@ -1,0 +1,5 @@
+2025-08-26 20:50:53,769 - INFO - Loading pretrained weights from Hugging Face hub (timm/resnet18.a1_in1k)
+2025-08-26 20:50:54,290 - INFO - [timm/resnet18.a1_in1k] Safe alternative available for 'pytorch_model.bin' (as 'model.safetensors'). Loading weights using safetensors.
+2025-08-26 20:50:54,871 - INFO - Model parameters: {'total': 16145862, 'trainable': 16145862, 'non_trainable': 0}
+2025-08-26 20:50:56,687 - INFO - Class distribution: {1: 84, 2: 35}
+2025-08-26 20:50:56,688 - INFO - Using effective class weights: [0.5983625054359436, 1.4016374349594116]

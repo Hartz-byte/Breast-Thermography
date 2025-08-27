@@ -35,81 +35,109 @@ class BreastThermographyDataset(Dataset):
         self.views = self.config.get('data', {}).get('views', ['anterior', 'oblleft', 'oblright'])
         self.data_preprocessor = data_preprocessor
         
-        # Map class names to folder names
+        # Map class names to folder names (only Benign and Malignant)
         self.class_to_folder = {
-            0: 'Normal',
-            1: 'Benign',
-            2: 'Malignant'
+            0: 'Benign',
+            1: 'Malignant'
         }
         
     def __len__(self) -> int:
         return len(self.data_df)
         
     def __getitem__(self, idx: int) -> Dict[str, Any]:
+        processed_images = []
         row = self.data_df.iloc[idx]
-        patient_id = row['Image']
-        label = row['label']
+        # Ensure patient_id is a string and strip any whitespace
+        patient_id = str(row['Image']).strip()
+        label = int(row['label'])  # Ensure label is an integer (0 or 1)
+        
+        # Validate label is within expected range
+        if label not in self.class_to_folder:
+            logging.warning(f"Invalid label {label} for patient {patient_id}, defaulting to Benign (0)")
+            label = 0  # Default to Benign for any invalid labels
         
         # Get class folder name
         class_folder = self.class_to_folder[label]
         
         # Load all three views
         images = []
+        missing_views = 0
+        
+        target_size = self.config.get('data', {}).get('image_size', [224, 224])
         for view in self.views:
-            img_path = os.path.join(
-                self.config['data']['raw_path'],
+            # Construct filename
+            filename = f"{patient_id}_{view}.jpg"
+            # Build path components as strings
+            path_components = [
+                str(self.config.get('data', {}).get('raw_path', '')).strip(),
                 'Breast-Thermography-Raw',
                 class_folder,
                 patient_id,
-                f"{patient_id}_{view}.jpg"
-            )
+                filename
+            ]
+            
+            # Filter out any empty path components
+            path_components = [str(pc) for pc in path_components if pc]
+            # Join path components
+            img_path = os.path.join(*path_components)
             
             try:
-                if os.path.exists(img_path):
+                if os.path.exists(img_path) and os.access(img_path, os.R_OK):
                     image = cv2.imread(img_path)
                     if image is None:
-                        raise ValueError(f"Failed to load image at {img_path}")
+                        raise ValueError(f"Failed to read image at {img_path}")
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    if image.shape != target_size or image.shape != target_size:
+                        image = cv2.resize(image, (target_size, target_size))
                 else:
-                    # If image is missing, use a black image and log a warning
-                    image = np.zeros((224, 224, 3), dtype=np.uint8)
-                    if self.transform is not None:  # Only log during training
-                        logging.warning(f"Missing image at {img_path}, using zero tensor")
-                
-                if self.transform is not None:
-                    # Apply class-specific transformations if available
-                    if hasattr(self, 'data_preprocessor'):
-                        # Get class-specific transform
-                        class_transform = self.data_preprocessor.create_transforms(
-                            is_train=True,
-                            label=label
-                        )
-                        augmented = class_transform(image=image)
-                    else:
-                        # Fallback to default transform
-                        augmented = self.transform(image=image)
-                        
-                    image = augmented['image']
+                    missing_views += 1
+                    image = np.zeros((*target_size, 3), dtype=np.uint8)
                     
-                images.append(image)
+                # Apply transforms to each view individually
+                if self.transform:
+                    if isinstance(self.transform, dict):
+                        transform = self.transform.get(label, self.transform.get(0))
+                        if transform:
+                            augmented = transform(image=image)
+                            image = augmented['image']
+                    else:
+                        augmented = self.transform(image=image)
+                        image = augmented['image']
+                
+                # Ensure image is a tensor with correct shape (3, 224, 224)
+                if not isinstance(image, torch.Tensor):
+                    image = torch.from_numpy(image).float()
+                    if len(image.shape) == 3 and image.shape == 3:  # HWC format
+                        image = image.permute(2, 0, 1)  # Convert to CHW
+                
+                # Verify shape is correct
+                if image.shape != (3, 224, 224):
+                    logging.warning(f"Unexpected image shape {image.shape} for {patient_id}_{view}")
+                    image = torch.zeros((3, 224, 224), dtype=torch.float32)
+                    
+                processed_images.append(image)
                 
             except Exception as e:
+                missing_views += 1
                 logging.error(f"Error loading {img_path}: {str(e)}")
-                # Return a zero tensor of the expected shape if there's an error
-                image = np.zeros((224, 224, 3), dtype=np.uint8)
-                if self.transform:
-                    augmented = self.transform(image=image)
-                    image = augmented['image']
-                images.append(image)
+                processed_images.append(torch.zeros((3, 224, 224), dtype=torch.float32))
         
-        # Stack views along channel dimension (3 views × 3 channels = 9 channels)
+        # Log warning for missing views
+        if missing_views > 0:
+            logging.warning(f"Patient {patient_id} is missing {missing_views} view(s) out of {len(self.views)}")
+        
+        # Concatenate along channel dimension: (3, 224, 224) x 3 -> (9, 224, 224)
         try:
-            combined_image = np.concatenate(images, axis=-1)
-            combined_image = torch.from_numpy(combined_image).float()
-            combined_image = combined_image.permute(2, 0, 1)  # HWC to CHW
+            combined_image = torch.cat(processed_images, dim=0)  # Concatenate along channel dimension
+            
+            # Verify final shape
+            expected_shape = (9, 224, 224)
+            if combined_image.shape != expected_shape:
+                logging.error(f"Incorrect combined shape {combined_image.shape}, expected {expected_shape}")
+                combined_image = torch.zeros(expected_shape, dtype=torch.float32)
+                
         except Exception as e:
-            logging.error(f"Error processing images for patient {patient_id}: {str(e)}")
-            # Return zero tensor of expected shape if concatenation fails
+            logging.error(f"Error concatenating images for patient {patient_id}: {str(e)}")
             combined_image = torch.zeros((9, 224, 224), dtype=torch.float32)
         
         return {
@@ -125,7 +153,7 @@ class DataPreprocessor:
     def __init__(self, config_path: str = "../configs/config.yaml"):
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
-        
+            
         self.label_encoder = LabelEncoder()
         self.left_encoder = LabelEncoder()
         self.right_encoder = LabelEncoder()
@@ -134,11 +162,21 @@ class DataPreprocessor:
         # Class balancing parameters
         self.class_weights = None
         self.class_counts = None
-        self.label_mapping = {'N': 0, 'PB': 1, 'PM': 2}
-        self.label_names = {0: 'Normal', 1: 'Benign', 2: 'Malignant'}
+        # Updated to only include Benign (0) and Malignant (1)
+        self.label_mapping = {'N': 0, 'PB': 0, 'PM': 1}
+        self.label_names = {0: 'Benign', 1: 'Malignant'}
+        
+        # Add class_to_folder mapping for saving processed data
+        self.class_to_folder = {
+            0: 'Benign',
+            1: 'Malignant'
+        }
         
     def load_diagnostics(self):
-        """Load and preprocess the diagnostics Excel file."""
+        """
+        Load and preprocess the diagnostics Excel file.
+        Handles only Benign (0) and Malignant (1) classes.
+        """
         try:
             # Construct the full path to the Excel file
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -155,23 +193,39 @@ class DataPreprocessor:
             df.columns = [col.strip() for col in df.columns]
             
             # Map labels to numerical values
-            label_mapping = {'N': 0, 'PB': 1, 'PM': 2}
+            # N (Normal) and PB (Probably Benign) are mapped to 0 (Benign)
+            # PM (Probably Malignant) is mapped to 1 (Malignant)
+            left_mapping = {'N': 0, 'PB': 0, 'PM': 1}
+            right_mapping = {'N': 0, 'PB': 0, 'PM': 1}
             
-            # Create target labels (multi-label format)
-            df['left_label'] = df['Left'].map(label_mapping)
-            df['right_label'] = df['Right'].map(label_mapping)
+            # Create target labels for each breast
+            df['left_label'] = df['Left'].map(left_mapping)
+            df['right_label'] = df['Right'].map(right_mapping)
             
             # Combine labels (using the more severe condition if both sides have issues)
             df['label'] = df[['left_label', 'right_label']].max(axis=1)
             
+            # Filter out any rows with invalid labels (shouldn't happen with our mapping)
+            df = df[df['label'].isin([0, 1])].copy()
+            
             # Map numerical labels back to string labels for readability
-            label_names = {0: 'Normal', 1: 'Benign', 2: 'Malignant'}
+            label_names = {0: 'Benign', 1: 'Malignant'}
             df['combined_label'] = df['label'].map(label_names)
             
             # Store class distribution
             self.class_counts = df['label'].value_counts().sort_index()
             total_samples = len(df)
-            num_classes = len(self.class_counts)
+            
+            # Ensure we have exactly 2 classes
+            num_classes = 2
+            
+            # Fill in missing classes with 0 count
+            for i in range(num_classes):
+                if i not in self.class_counts:
+                    self.class_counts[i] = 0
+            
+            # Sort the class counts to ensure consistent ordering
+            self.class_counts = self.class_counts.sort_index()
             
             # Get weighting method from config or use default
             method = self.config['training'].get('class_weighting', 'inverse_freq')
@@ -190,11 +244,25 @@ class DataPreprocessor:
                 weights = weights / np.sum(weights) * num_classes
             else:
                 weights = np.ones(num_classes)
+            
+            # Convert to tensor and ensure we have weights for both classes
+            if len(weights) < num_classes:
+                # If we're missing weights for any class, use 1.0 as default
+                full_weights = np.ones(num_classes)
+                for i in range(min(len(weights), num_classes)):
+                    full_weights[i] = weights[i]
+                weights = full_weights
                 
             self.class_weights = torch.tensor(weights, dtype=torch.float32)
             
             self.logger.info(f"Class distribution: {self.class_counts.to_dict()}")
             self.logger.info(f"Using {method} class weights: {self.class_weights.tolist()}")
+            
+            # Log any potential issues
+            if len(df) == 0:
+                self.logger.warning("No valid samples found after filtering!")
+            elif any(count == 0 for count in self.class_counts):
+                self.logger.warning(f"Some classes have zero samples: {self.class_counts.to_dict()}")
             
             return df
             
@@ -308,19 +376,25 @@ class DataPreprocessor:
         
         return transform
     
-    def save_processed_data(self, df: pd.DataFrame, output_dir: str = "../data/processed") -> None:
-        """Save preprocessed data to disk with progress tracking."""
-        from tqdm import tqdm
-        import time
-        
+    def save_processed_data(self, df: pd.DataFrame, output_dir: str = None) -> None:
+        """Save processed data with proper directory structure."""
+        if output_dir is None:
+            output_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                self.config['data']['processed_path'].replace('/', os.sep)
+            )
+            
         os.makedirs(output_dir, exist_ok=True)
         
-        # Create reverse mapping from label to class name
-        label_to_class = {v: k for k, v in self.class_to_folder.items()}
-        
         # Create subdirectories for each class
-        for cls in self.class_to_folder.values():
-            os.makedirs(os.path.join(output_dir, str(cls)), exist_ok=True)
+        for cls_name in self.class_to_folder.values():
+            os.makedirs(os.path.join(output_dir, str(cls_name)), exist_ok=True)
+            
+        # Save CSV with metadata
+        df.to_csv(os.path.join(output_dir, 'processed_data.csv'), index=False)
+        
+        from tqdm import tqdm
+        import time
         
         # Initialize counters
         total_samples = len(df)
@@ -336,9 +410,9 @@ class DataPreprocessor:
                 patient_id = row['Image']
                 label = row['label']
                 
-                # Map numeric label to class name
-                class_name = label_to_class.get(label, str(label))
-                output_path = os.path.join(output_dir, class_name, f"{patient_id}.pt")
+                # Get class name from label
+                class_name = self.class_to_folder.get(label, str(label))
+                output_path = os.path.join(output_dir, str(class_name), f"{patient_id}.pt")
                 
                 # Skip if already processed
                 if os.path.exists(output_path):
@@ -374,133 +448,154 @@ class DataPreprocessor:
         print(f"\nProcessed data saved to: {os.path.abspath(output_dir)}")
     
     def create_datasets(self, save_processed: bool = True) -> Tuple[DataLoader, DataLoader, pd.DataFrame]:
-        """Create train and validation datasets.
+        """Create train and validation datasets for binary classification.
         
         Args:
             save_processed: If True, save processed data to disk
-        """
-        df = self.load_diagnostics()
-        
-        # Get unique classes in the data
-        unique_classes = df['label'].unique()
-        num_classes = len(unique_classes)
-        
-        # Update class_to_folder mapping based on actual data
-        self.class_to_folder = {i: cls for i, cls in enumerate(unique_classes)}
-        
-        # Create train/validation split
-        train_df, val_df = train_test_split(
-            df,
-            test_size=self.config['validation']['split_ratio'],
-            random_state=self.config['validation']['random_state'],
-            stratify=df['label'] if self.config['validation']['stratify'] else None
-        )
-        
-        # Create datasets
-        train_dataset = BreastThermographyDataset(
-            train_df, 
-            transform=self.create_transforms(is_train=True),
-            config=self.config,
-            data_preprocessor=self
-        )
-        
-        val_dataset = BreastThermographyDataset(
-            val_df,
-            transform=self.create_transforms(is_train=False),
-            config=self.config,
-            data_preprocessor=self
-        )
-        
-        # Save processed data if requested
-        if save_processed:
-            self.dataset = train_dataset  # Store reference for saving
-            self.save_processed_data(train_df)
             
-            self.dataset = val_dataset
-            self.save_processed_data(val_df)
-        
-        # Calculate weights for weighted random sampler
-        train_labels = train_df['label'].values
-        class_sample_count = np.array([len(np.where(train_labels == t)[0]) for t in np.unique(train_labels)])
-        weight = 1. / class_sample_count
-        samples_weight = np.array([weight[np.where(np.unique(train_labels) == t)[0][0]] for t in train_labels])
-        samples_weight = torch.from_numpy(samples_weight).double()
-        
-        # Create sampler
-        sampler = torch.utils.data.WeightedRandomSampler(
-            samples_weight, 
-            len(samples_weight),
-            replacement=True
-        )
-        
-        # Create dataloaders
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=self.config['training']['batch_size'],
-            sampler=sampler,
-            num_workers=self.config['hardware']['num_workers'],
-            pin_memory=self.config['hardware']['pin_memory'],
-            drop_last=True,
-            persistent_workers=True if self.config['hardware']['num_workers'] > 0 else False
-        )
-        
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=self.config['training']['batch_size'],
-            shuffle=False,
-            num_workers=self.config['hardware']['num_workers'],
-            pin_memory=self.config['hardware']['pin_memory'],
-            persistent_workers=True if self.config['hardware']['num_workers'] > 0 else False
-        )
-        
-        return train_loader, val_loader, df
-    
-    def visualize_data_distribution(self, df: pd.DataFrame, save_path: str = "outputs/plots/data_distribution.png"):
-        """Visualize data distribution."""
-        # Create parent directory if it doesn't exist
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        
-        fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-        
-        # Label distribution
-        axes[0, 0].pie(df['combined_label'].value_counts().values, 
-                      labels=df['combined_label'].value_counts().index,
-                      autopct='%1.1f%%')
-        axes[0, 0].set_title('Overall Label Distribution')
-        
-        # Age distribution by label
-        sns.boxplot(data=df, x='combined_label', y='Age(years)', ax=axes[0, 1])
-        axes[0, 1].set_title('Age Distribution by Label')
-        
-        # Weight distribution by label
-        sns.boxplot(data=df, x='combined_label', y='Weight (Kg)', ax=axes[0, 2])
-        axes[0, 2].set_title('Weight Distribution by Label')
-        
-        # Height distribution by label
-        sns.boxplot(data=df, x='combined_label', y='Height(cm)', ax=axes[1, 0])
-        axes[1, 0].set_title('Height Distribution by Label')
-        
-        # Temperature distribution by label
-        sns.boxplot(data=df, x='combined_label', y='Temp(°C)', ax=axes[1, 1])
-        axes[1, 1].set_title('Temperature Distribution by Label')
-        
-        # Correlation heatmap
-        numeric_cols = ['Age(years)', 'Weight (Kg)', 'Height(cm)', 'Temp(°C)', 'label']
-        corr_matrix = df[numeric_cols].corr()
-        sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', ax=axes[1, 2])
-        axes[1, 2].set_title('Feature Correlation Matrix')
-        
-        plt.tight_layout()
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        plt.show()
-        
-        # Print statistics
-        print("Dataset Statistics:")
-        print(f"Total samples: {len(df)}")
-        print(f"Label distribution:\n{df['combined_label'].value_counts()}")
-        print(f"\nLeft breast status:\n{df['Left'].value_counts()}")
-        print(f"\nRight breast status:\n{df['Right'].value_counts()}")
-        
+        Returns:
+            Tuple containing train_loader, val_loader, and the processed DataFrame
+        """
+        try:
+            # Load and preprocess the data
+            df = self.load_diagnostics()
+            
+            # Ensure we have data to work with
+            if df is None or len(df) == 0:
+                raise ValueError("No data available after loading diagnostics")
+                
+            # Ensure required columns exist
+            required_columns = ['Image', 'label']
+            if not all(col in df.columns for col in required_columns):
+                missing = [col for col in required_columns if col not in df.columns]
+                raise ValueError(f"Missing required columns in dataframe: {missing}")
+            
+            # Ensure we have both classes present
+            unique_labels = df['label'].unique()
+            if len(unique_labels) < 2:
+                raise ValueError(f"Expected at least 2 classes, found only: {unique_labels}")
+                
+            # Log data distribution
+            self.logger.info("\n" + "="*50)
+            self.logger.info("DATASET SUMMARY")
+            self.logger.info("="*50)
+            self.logger.info(f"Total samples: {len(df)}")
+            self.logger.info("Class distribution:")
+            for label, count in df['label'].value_counts().sort_index().items():
+                self.logger.info(f"  - {self.label_names.get(label, f'Class {label}')}: {count} samples")
+            
+            # Split data into train and validation sets
+            split_ratio = self.config['validation'].get('split_ratio', 0.2)
+            stratify = df['label'] if self.config['validation'].get('stratify', True) else None
+            random_state = self.config['validation'].get('random_state', 42)
+            
+            # Ensure we have enough samples for the split
+            min_samples_per_class = 2  # Minimum samples per class for train/test split
+            for label in unique_labels:
+                if (df['label'] == label).sum() < min_samples_per_class * 2:  # Need at least 2 samples per class
+                    raise ValueError(f"Class {self.label_names.get(label, f'Class {label}')} has too few samples for splitting")
+            
+            train_df, val_df = train_test_split(
+                df,
+                test_size=split_ratio,
+                stratify=stratify,
+                random_state=random_state
+            )
+            
+            self.logger.info("\n" + "-"*50)
+            self.logger.info(f"Training samples: {len(train_df)}")
+            self.logger.info(f"Validation samples: {len(val_df)}")
+            self.logger.info("-"*50 + "\n")
+            
+            # Create class-specific transforms for training data
+            train_transforms = {}
+            for label in [0, 1]:  # Only Benign (0) and Malignant (1)
+                train_transforms[label] = self.create_transforms(is_train=True, label=label)
+            
+            # Create datasets
+            train_dataset = BreastThermographyDataset(
+                train_df, 
+                transform=train_transforms,  # Use class-specific transforms for training
+                config=self.config,
+                data_preprocessor=self
+            )
+            
+            # For validation, we don't need augmentation, just basic transforms
+            val_transforms = self.create_transforms(is_train=False)
+            val_dataset = BreastThermographyDataset(
+                val_df,
+                transform=val_transforms,
+                config=self.config,
+                data_preprocessor=self
+            )
+            
+            # Log dataset details
+            self.logger.info("\nDATASET DETAILS:")
+            self.logger.info(f"Training samples: {len(train_dataset)}")
+            self.logger.info(f"Validation samples: {len(val_dataset)}")
+            self.logger.info(f"Number of classes: {len(self.class_to_folder)}")
+            self.logger.info(f"Class to folder mapping: {self.class_to_folder}")
+            
+            # Save processed data if requested
+            if save_processed:
+                self.logger.info("\nSaving processed data...")
+                self.dataset = train_dataset  # Store reference for saving
+                self.save_processed_data(train_df)
+                self.logger.info("Processed data saved successfully.")
+            
+            # Create data loaders with appropriate settings
+            batch_size = self.config['training']['batch_size']
+            num_workers = self.config['data'].get('num_workers', 4)
+            pin_memory = self.config['data'].get('pin_memory', True)
+            
+            # Create weighted sampler for training
+            train_labels = train_df['label'].values
+            class_sample_count = np.array([len(np.where(train_labels == t)[0]) for t in np.unique(train_labels)])
+            weight = 1. / class_sample_count
+            samples_weight = np.array([weight[np.where(np.unique(train_labels) == t)[0][0]] for t in train_labels])
+            samples_weight = torch.from_numpy(samples_weight).double()
+            
+            sampler = torch.utils.data.WeightedRandomSampler(
+                samples_weight,
+                len(samples_weight),
+                replacement=True
+            )
+            
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=batch_size,
+                sampler=sampler,
+                num_workers=num_workers,
+                pin_memory=pin_memory,
+                drop_last=True,
+                persistent_workers=num_workers > 0
+            )
+            
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=num_workers,
+                pin_memory=pin_memory,
+                persistent_workers=num_workers > 0
+            )
+            
+            # Log data loader details
+            self.logger.info(f"\nDATA LOADER CONFIGURATION:")
+            self.logger.info(f"Batch size: {batch_size}")
+            self.logger.info(f"Number of workers: {num_workers}")
+            self.logger.info(f"CUDA available: {torch.cuda.is_available()}")
+            
+            self.logger.info("\n" + "="*50)
+            self.logger.info("DATASET CREATION COMPLETE")
+            self.logger.info("="*50 + "\n")
+            
+            return train_loader, val_loader, df
+            
+        except Exception as e:
+            self.logger.error(f"Error creating datasets: {str(e)}")
+            raise
+
     def get_label_mappings(self) -> Dict:
         """Get label encoding mappings."""
         return {

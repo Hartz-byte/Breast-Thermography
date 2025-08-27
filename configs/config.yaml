@@ -14,19 +14,20 @@ data:
 # Model settings
 model:
   name: "HybridCNNViT"
-  num_classes: 3  # 0: Normal, 1: Benign, 2: Malignant
+  num_classes: 2  # 0: Benign, 1: Malignant
   backbone: "resnet18"  # Lightweight for 4GB VRAM
   vit_patch_size: 16
   vit_embed_dim: 256
   vit_depth: 6
   vit_heads: 8
-  dropout: 0.1
+  dropout: 0.2
 
 # Training settings
 training:
-  batch_size: 8  # Optimized for 4GB VRAM
-  learning_rate: 0.001
-  epochs: 50
+  batch_size: 4
+  learning_rate: 0.0005
+  epochs: 100
+  grad_clip: 1.0
   weight_decay: 0.01
   warmup_epochs: 5
   mixed_precision: true
@@ -45,15 +46,12 @@ training:
 
 # Data augmentation
 augmentation:
-  # Base augmentation probabilities
   horizontal_flip: 0.5
-  rotation: 15
-  brightness: 0.2
-  contrast: 0.2
-  
-  # Class-specific augmentation strength
-  base_strength: 0.5  # Minimum augmentation strength
-  max_strength: 2.0   # Maximum augmentation strength for minority classes
+  rotation: 10
+  brightness: 0.15
+  contrast: 0.15
+  base_strength: 0.3
+  max_strength: 1.5
 
 # Validation settings
 validation:
@@ -64,7 +62,7 @@ validation:
 # Hardware settings
 hardware:
   device: "cuda"
-  num_workers: 4
+  num_workers: 0
   pin_memory: true
 
 # Output settings
@@ -74,4 +72,4 @@ output:
   result_dir: "outputs/results"
 
 # Class weights (will be calculated automatically)
-class_weights: [1.0, 1.0, 1.0]  # Normal, Benign, Malignant
+class_weights: [1.0, 1.0]  # Benign, Malignant

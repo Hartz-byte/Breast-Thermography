@@ -24,6 +24,25 @@ import seaborn as sns
 from src.model import ModelBuilder, HybridCNNViT
 from src.data_prep import DataPreprocessor
 
+def validate_batch_shapes(batch):
+    """Validate batch tensor shapes before model forward pass."""
+    images = batch['image']
+    labels = batch['label']
+    
+    batch_size = images.size(0)
+    expected_image_shape = (batch_size, 9, 224, 224)
+    
+    if images.shape != expected_image_shape:
+        print(f"ERROR: Invalid image shape {images.shape}, expected {expected_image_shape}")
+        return False
+        
+    if len(labels.shape) != 1 or labels.size(0) != batch_size:
+        print(f"ERROR: Invalid label shape {labels.shape}")
+        return False
+        
+    print(f"✓ Valid shapes - Images: {images.shape}, Labels: {labels.shape}")
+    return True
+
 class FocalLoss(nn.Module):
     """
     Focal Loss variant that supports:
@@ -301,8 +320,18 @@ class Trainer:
         pbar = tqdm(train_loader, desc=f'Epoch {epoch+1}/{self.config["training"]["epochs"]}')
         
         for batch_idx, batch in enumerate(pbar):
+            # Validation
+            if not validate_batch_shapes(batch):
+                print(f"Skipping corrupted batch {batch_idx}")
+                continue
+            
             images = batch['image'].to(self.device, non_blocking=True)
             labels = batch['label'].to(self.device, non_blocking=True)
+
+            # Additional check after moving to device
+            if images.dim() != 4 or images.size(1) != 9:
+                print(f"ERROR: Wrong channels {images.shape} in batch {batch_idx}")
+                continue
             
             # Zero the parameter gradients
             optimizer.zero_grad()
