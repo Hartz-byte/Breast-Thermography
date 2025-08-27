@@ -24,18 +24,45 @@ model:
 
 # Training settings
 training:
+  use_aux_loss: true
+  aux_loss_weight: 0.5
+
+  # Batch and epochs
   batch_size: 4
-  learning_rate: 0.0005
   epochs: 25
+  
+  # Learning rate configuration
+  learning_rate: 0.001  # Increased from 0.0005
+  min_lr: 1e-6  # Minimum learning rate
+  
+  # Learning rate scheduler
+  scheduler: 'cosine'  # Options: 'cosine', 'step', 'plateau', 'one_cycle'
+  warmup_epochs: 5  # Linear warmup epochs
+  warmup_factor: 0.1  # Start with lr * warmup_factor
+  
+  # Optimizer settings
+  optimizer: 'adamw'  # Options: 'adam', 'adamw', 'sgd'
+  weight_decay: 0.05  # Increased from 0.01
+  momentum: 0.9  # For SGD
+  nesterov: True  # For SGD with momentum
+  
+  # Gradient handling
   grad_clip: 1.0
-  weight_decay: 0.01
-  warmup_epochs: 5
+  gradient_accumulation_steps: 2  # Simulate larger batch size
+  
+  # Performance
   mixed_precision: true
   gradient_checkpointing: true
   
   # Class imbalance handling
   class_weighting: 'effective'  # Options: 'inverse_freq', 'sqrt', 'balanced', 'effective'
   beta: 0.999  # For effective number of samples
+  
+  # Learning rate finder
+  lr_find: False  # Set to True to run learning rate finder
+  lr_find_epochs: 5
+  lr_find_min_lr: 1e-6
+  lr_find_max_lr: 1.0
   
   # Loss function settings
   loss:
@@ -46,12 +73,41 @@ training:
 
 # Data augmentation
 augmentation:
+  # Basic geometric transforms
   horizontal_flip: 0.5
-  rotation: 10
-  brightness: 0.15
-  contrast: 0.15
-  base_strength: 0.3
-  max_strength: 1.5
+  vertical_flip: 0.3
+  rotation: 15  # Increased from 10
+  scale: [0.9, 1.1]  # Random scaling
+  shear: 5  # Shear in degrees
+  
+  # Color transforms
+  brightness: 0.2  # Increased from 0.15
+  contrast: 0.2  # Increased from 0.15
+  saturation: 0.2
+  hue: 0.1
+  
+  # Advanced augmentations
+  cutout: True
+  cutout_holes: 5
+  cutout_size: 0.1  # 10% of image size
+  
+  # Noise and blur
+  gaussian_blur: True
+  gaussian_noise: True
+  noise_var_limit: (10.0, 50.0)
+  
+  # Mixup augmentation
+  mixup_alpha: 0.4
+  
+  # Intensity transforms
+  random_gamma: True
+  gamma_limit: (80, 120)  # As percentage
+  
+  # Elastic transforms
+  elastic_transform: True
+  alpha: 1
+  sigma: 50
+  alpha_affine: 50
 
 # Validation settings
 validation:

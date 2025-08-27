@@ -55,28 +55,131 @@ class ModelEvaluator:
         
         return model
     
-    def evaluate_model(self, model: HybridCNNViT, data_loader, 
+    def _process_model_outputs(self, outputs):
+        """
+        Process model outputs to handle different output formats.
+        
+        Args:
+            outputs: Model outputs which could be a tensor, dict, or tuple
+            
+        Returns:
+            tuple: (logits, features) where features could be None
+            
+        Raises:
+            ValueError: If output format is not recognized
+        """
+        features = None
+        
+        # Handle different output formats
+        if isinstance(outputs, dict):
+            # Handle dictionary outputs
+            logits = None
+            
+            # Check common logit keys
+            for key in ['logits', 'main_logits', 'out', 'output', 'predictions']:
+                if key in outputs and torch.is_tensor(outputs[key]):
+                    logits = outputs[key]
+                    break
+            
+            # If no standard logit key found, look for any tensor
+            if logits is None:
+                for v in outputs.values():
+                    if torch.is_tensor(v) and v.dim() >= 2:  # Ensure it's a batch of logits
+                        logits = v
+                        break
+            
+            # Get features if available
+            for feat_key in ['cls_token', 'features', 'embedding', 'hidden_state']:
+                if feat_key in outputs and torch.is_tensor(outputs[feat_key]):
+                    features = outputs[feat_key]
+                    break
+                    
+        elif isinstance(outputs, (tuple, list)):
+            # Handle tuple/list outputs (common in some architectures)
+            if len(outputs) > 1:
+                logits, features = outputs[0], outputs[1]
+            else:
+                logits = outputs[0]
+                
+        elif torch.is_tensor(outputs):
+            # Handle direct tensor output
+            logits = outputs
+            
+        else:
+            raise ValueError(f"Unexpected model output type: {type(outputs)}")
+        
+        # Validate logits
+        if logits is None or not torch.is_tensor(logits) or logits.dim() < 2:
+            raise ValueError("Could not extract valid logits from model output")
+            
+        return logits, features
+    
+    def evaluate_model(self, model: nn.Module, data_loader, 
                       class_names: List[str] = None) -> Dict[str, Any]:
-        """Comprehensive model evaluation."""
+        """
+        Comprehensive model evaluation with support for different output formats.
+        
+        Args:
+            model: The model to evaluate
+            data_loader: DataLoader for evaluation data
+            class_names: Optional list of class names for metrics
+            
+        Returns:
+            Dict containing evaluation metrics and results
+        """
         model.eval()
         all_predictions = []
         all_probabilities = []
         all_labels = []
         all_features = []
+        batch_losses = []
+        
+        # Get loss function from config or use default
+        loss_fn = nn.CrossEntropyLoss()
         
         with torch.no_grad():
-            for batch in tqdm(data_loader, desc="Evaluating"):
-                images = batch['image'].to(self.device)
-                labels = batch['label'].to(self.device)
-                
-                outputs = model(images)
-                probabilities = F.softmax(outputs['main_logits'], dim=1)
-                predictions = torch.argmax(probabilities, dim=1)
-                
-                all_predictions.extend(predictions.cpu().numpy())
-                all_probabilities.extend(probabilities.cpu().numpy())
-                all_labels.extend(labels.cpu().numpy())
-                all_features.extend(outputs['cls_token'].cpu().numpy())
+            for batch_idx, batch in enumerate(tqdm(data_loader, desc="Evaluating")):
+                try:
+                    # Handle different batch formats
+                    if isinstance(batch, dict):
+                        images = batch['image'].to(self.device, non_blocking=True)
+                        labels = batch['label'].to(self.device, non_blocking=True)
+                    elif isinstance(batch, (list, tuple)) and len(batch) >= 2:
+                        images, labels = batch[0], batch[1]
+                        images = images.to(self.device, non_blocking=True)
+                        labels = labels.to(self.device, non_blocking=True)
+                    else:
+                        print(f"Skipping unexpected batch type: {type(batch)}")
+                        continue
+                    
+                    # Forward pass with autocast for mixed precision
+                    with torch.cuda.amp.autocast(enabled=self.config.get('training', {}).get('mixed_precision', True)):
+                        outputs = model(images)
+                        
+                        # Process outputs
+                        logits, features = self._process_model_outputs(outputs)
+                        
+                        # Calculate loss
+                        loss = loss_fn(logits, labels)
+                        batch_losses.append(loss.item())
+                        
+                        # Get predictions and probabilities
+                        probabilities = F.softmax(logits, dim=1)
+                        predictions = torch.argmax(probabilities, dim=1)
+                        
+                        # Store results
+                        all_predictions.append(predictions.cpu().numpy())
+                        all_probabilities.append(probabilities.cpu().numpy())
+                        all_labels.append(labels.cpu().numpy())
+                        
+                        if features is not None:
+                            all_features.append(features.cpu().numpy())
+                        
+                except Exception as e:
+                    print(f"Error processing batch {batch_idx}: {str(e)}")
+                    if batch_idx == 0:  # If first batch fails, it's likely a critical error
+                        raise
+                    continue
         
         # Convert to numpy arrays
         all_predictions = np.array(all_predictions)

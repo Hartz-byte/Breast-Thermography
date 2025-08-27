@@ -366,88 +366,78 @@ class DataPreprocessor:
         Args:
             is_train: Whether to create training transforms (if False, only basic transforms are applied)
             label: Class label (used to determine augmentation strength for training)
-            
+                
         Returns:
             A.Compose: Albumentations composition of transforms
         """
-        # Base resize and normalize transforms
+        # Get augmentation strength based on class frequency
+        strength = self._get_augmentation_strength(label) if is_train and label is not None else 1.0
+        
+        # Base transforms (applied to all images)
         base_transforms = [
-            A.Resize(
-                self.config['data']['image_size'][0], 
-                self.config['data']['image_size'][1]
-            ),
+            A.Resize(*self.config['data'].get('image_size', [224, 224])),
             A.Normalize(
-                mean=self.config['data']['mean'],
-                std=self.config['data']['std']
+                mean=[0.485, 0.456, 0.406],
+                std=[0.229, 0.224, 0.225],
+                max_pixel_value=255.0
             ),
             ToTensorV2()
         ]
         
+        # If not training, just return base transforms
         if not is_train:
             return A.Compose(base_transforms)
             
-        # Get augmentation strength based on class frequency
-        strength = self._get_augmentation_strength(label)
-        
-        # Base augmentation probabilities
-        p_hflip = 0.5 * strength
-        p_vflip = 0.5 * strength
-        p_rotate = 0.5 * strength
-        p_brightness = 0.2 * strength
-        p_affine = 0.3 * strength
-        
-        # Define augmentation pipeline
+        # Define augmentations with strength scaling
         augmentations = [
             # Geometric transforms
-            A.HorizontalFlip(p=p_hflip),
-            A.VerticalFlip(p=p_vflip),
-            A.Rotate(limit=30, p=p_rotate),
+            A.HorizontalFlip(p=0.5 * strength),
+            A.VerticalFlip(p=0.3 * strength),
+            A.Rotate(limit=30 * strength, p=0.5 * strength),
             A.ShiftScaleRotate(
                 shift_limit=0.1 * strength,
                 scale_limit=0.1 * strength,
                 rotate_limit=15 * strength,
-                p=p_affine
+                p=0.5 * strength
             ),
             
             # Color transforms
             A.RandomBrightnessContrast(
                 brightness_limit=0.2 * strength,
                 contrast_limit=0.2 * strength,
-                p=p_brightness
+                p=0.5 * strength
             ),
             A.HueSaturationValue(
                 hue_shift_limit=20 * strength,
                 sat_shift_limit=30 * strength,
                 val_shift_limit=20 * strength,
-                p=p_brightness
+                p=0.5 * strength
             ),
             
             # Noise and blur
-            A.GaussNoise(var_limit=(10.0 * strength, 50.0 * strength), p=0.1 * strength),
-            A.GaussianBlur(blur_limit=(3, 7), p=0.1 * strength),
+            A.GaussNoise(var_limit=(10.0 * strength, 50.0 * strength), p=0.3 * strength),
+            A.GaussianBlur(blur_limit=(int(3 * strength), int(7 * strength)), p=0.3 * strength),
             
             # Advanced augmentations
             A.CoarseDropout(
                 max_holes=8,
-                max_height=32 * strength,
-                max_width=32 * strength,
+                max_height=int(32 * strength),
+                max_width=int(32 * strength),
                 min_holes=1,
                 min_height=8,
                 min_width=8,
                 fill_value=0,
-                p=0.1 * strength
-            ),
-            A.RandomGridShuffle(grid=(2, 2), p=0.1 * strength)
+                p=0.3 * strength
+            )
         ]
         
-        # Combine all transforms
-        transform = A.Compose([
-            *augmentations,
-            *base_transforms
-        ])
+        # Only apply augmentations with non-zero probability
+        augmentations = [t for t in augmentations if t.p > 0.01]
         
-        return transform
+        # Compose all transforms
+        return A.Compose(augmentations + base_transforms)
     
+    # ... (rest of the class remains the same)
     def visualize_data_distribution(self, df: pd.DataFrame, save_path: str = None) -> None:
         """
         Visualize the distribution of data across classes.

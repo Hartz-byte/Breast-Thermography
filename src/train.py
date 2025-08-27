@@ -246,28 +246,223 @@ class Trainer:
         return criterion
     
     def build_optimizer(self, model: nn.Module) -> Tuple[optim.Optimizer, optim.lr_scheduler.LRScheduler]:
-        """Build optimizer and scheduler."""
-        # Different learning rates for CNN backbone and ViT parts
-        cnn_params = list(model.cnn_extractor.parameters())
-        vit_params = [p for n, p in model.named_parameters() if 'cnn_extractor' not in n]
+        """
+        Build optimizer and scheduler with advanced learning rate scheduling.
         
-        param_groups = [
-            {'params': cnn_params, 'lr': self.config['training']['learning_rate'] * 0.1},  # Lower LR for pretrained CNN
-            {'params': vit_params, 'lr': self.config['training']['learning_rate']}
-        ]
+        Supports:
+        - Multiple optimizers (AdamW, Adam, SGD)
+        - Learning rate warmup
+        - Multiple scheduler types (cosine, step, plateau, one_cycle)
+        - Gradient accumulation
+        """
         
-        optimizer = optim.AdamW(
-            param_groups,
-            weight_decay=self.config['training']['weight_decay']
-        )
+        # Get parameters to optimize (exclude those with requires_grad=False)
+        params = [p for p in model.parameters() if p.requires_grad]
         
-        # Cosine annealing with warmup
-        scheduler = optim.lr_scheduler.CosineAnnealingLR(
-            optimizer,
-            T_max=self.config['training']['epochs']
-        )
+        # Get optimizer type from config
+        optimizer_type = self.config['training'].get('optimizer', 'adamw').lower()
+        lr = self.config['training']['learning_rate']
+        weight_decay = self.config['training']['weight_decay']
+        
+        # Set up optimizer
+        if optimizer_type == 'adamw':
+            optimizer = optim.AdamW(
+                params,
+                lr=lr,
+                weight_decay=weight_decay,
+                betas=(0.9, 0.999)
+            )
+        elif optimizer_type == 'adam':
+            optimizer = optim.Adam(
+                params,
+                lr=lr,
+                weight_decay=weight_decay,
+                betas=(0.9, 0.999)
+            )
+        elif optimizer_type == 'sgd':
+            optimizer = optim.SGD(
+                params,
+                lr=lr,
+                momentum=self.config['training'].get('momentum', 0.9),
+                weight_decay=weight_decay,
+                nesterov=self.config['training'].get('nesterov', True)
+            )
+        else:
+            raise ValueError(f"Unsupported optimizer: {optimizer_type}")
+        
+        # Set up learning rate warmup scheduler
+        warmup_epochs = self.config['training'].get('warmup_epochs', 5)
+        warmup_factor = self.config['training'].get('warmup_factor', 0.1)
+        
+        def warmup_lr_scheduler(epoch, warmup_epochs=warmup_epochs, warmup_factor=warmup_factor):
+            if epoch < warmup_epochs:
+                alpha = float(epoch) / warmup_epochs
+                warmup_factor = warmup_factor * (1 - alpha) + alpha
+                return warmup_factor
+            return 1.0
+        
+        # Set up main learning rate scheduler
+        scheduler_type = self.config['training'].get('scheduler', 'cosine').lower()
+        min_lr = self.config['training'].get('min_lr', 1e-6)
+        
+        if scheduler_type == 'cosine':
+            scheduler = optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=self.config['training']['epochs'] - warmup_epochs,
+                eta_min=min_lr
+            )
+        elif scheduler_type == 'step':
+            scheduler = optim.lr_scheduler.StepLR(
+                optimizer,
+                step_size=self.config['training'].get('step_size', 10),
+                gamma=self.config['training'].get('gamma', 0.1)
+            )
+        elif scheduler_type == 'plateau':
+            scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                mode='min',
+                factor=0.5,
+                patience=5,
+                min_lr=min_lr
+            )
+        elif scheduler_type == 'one_cycle':
+            scheduler = optim.lr_scheduler.OneCycleLR(
+                optimizer,
+                max_lr=lr,
+                steps_per_epoch=len(self.train_loader) // self.config['training'].get('gradient_accumulation_steps', 1),
+                epochs=self.config['training']['epochs'] - warmup_epochs,
+                pct_start=0.3,
+                anneal_strategy='cos',
+                final_div_factor=1e4
+            )
+        else:
+            raise ValueError(f"Unsupported scheduler type: {scheduler_type}")
+        
+        # Combine warmup and main scheduler
+        def lr_lambda(epoch):
+            warmup = warmup_lr_scheduler(epoch)
+            if epoch < warmup_epochs:
+                return warmup
+            if scheduler_type == 'one_cycle':
+                return 1.0  # Handled by OneCycleLR
+            return scheduler.get_last_lr()[0] / lr if hasattr(scheduler, 'get_last_lr') else 1.0
+        
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
         
         return optimizer, scheduler
+    
+    def train_epoch(self, model: nn.Module, train_loader: DataLoader, 
+                   criterion: nn.Module, optimizer: optim.Optimizer, 
+                   scaler: GradScaler, epoch: int):
+        """
+        Train for one epoch with advanced features:
+        - Gradient accumulation
+        - Learning rate warmup
+        - Mixed precision training
+        - Gradient clipping
+        - Learning rate scheduling
+        """
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
+        
+        # Gradient accumulation steps
+        accumulation_steps = self.config['training'].get('gradient_accumulation_steps', 1)
+        
+        # Progress bar with more detailed information
+        pbar = tqdm(train_loader, desc=f"Epoch {epoch+1}")
+        
+        # Reset gradients
+        optimizer.zero_grad()
+        
+        for batch_idx, batch in enumerate(pbar):
+            # Move data to device
+            images = batch['image'].to(self.device, non_blocking=True)
+            labels = batch['label'].to(self.device, non_blocking=True)
+            
+            # Forward pass with mixed precision
+            with autocast(device_type='cuda', dtype=torch.float16, 
+                         enabled=self.config['training']['mixed_precision']):
+                outputs = model(images)
+                
+                # Handle dictionary output from model
+                if isinstance(outputs, dict):
+                    main_logits = outputs['main_logits']
+                    aux_logits = outputs.get('aux_logits')
+                    
+                    # Calculate main loss
+                    main_loss = criterion(main_logits, labels)
+                    
+                    # Calculate auxiliary loss if available
+                    aux_loss = 0.0
+                    if aux_logits is not None and self.config['training'].get('use_aux_loss', False):
+                        aux_loss = criterion(aux_logits, labels) * self.config['training'].get('aux_loss_weight', 0.5)
+                    
+                    # Combine losses
+                    loss = (main_loss + aux_loss) / accumulation_steps
+                    
+                    # Use main logits for accuracy calculation
+                    outputs = main_logits
+                else:
+                    # Handle case where model returns raw logits (for backward compatibility)
+                    loss = criterion(outputs, labels) / accumulation_steps
+            
+            # Backward pass
+            scaler.scale(loss).backward()
+            
+            # Calculate accuracy
+            with torch.no_grad():
+                if isinstance(outputs, dict):
+                    outputs = outputs['main_logits']
+                _, predicted = torch.max(outputs.data, 1)
+                batch_total = labels.size(0)
+                batch_correct = (predicted == labels).sum().item()
+                
+                # Update running metrics
+                total += batch_total
+                correct += batch_correct
+                running_loss += loss.item() * accumulation_steps  # Scale back loss
+            
+            # Perform optimization step after accumulation steps
+            if (batch_idx + 1) % accumulation_steps == 0 or (batch_idx + 1) == len(train_loader):
+                # Gradient clipping
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), 
+                    max_norm=self.config['training']['grad_clip']
+                )
+                
+                # Update weights
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+                
+                # Update progress bar
+                avg_loss = running_loss / (batch_idx + 1)
+                avg_acc = 100. * correct / total if total > 0 else 0.0
+                current_lr = optimizer.param_groups[0]['lr']
+                
+                pbar.set_postfix({
+                    'loss': f'{avg_loss:.4f}',
+                    'acc': f'{avg_acc:.2f}%',
+                    'lr': f'{current_lr:.2e}'
+                })
+        
+        # Calculate epoch metrics
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = 100. * correct / total
+        
+        # Log metrics
+        if hasattr(self, 'logger'):
+            self.logger.info(
+                f"Epoch {epoch+1} - "
+                f"Train Loss: {epoch_loss:.4f}, "
+                f"Train Acc: {epoch_acc:.2f}%, "
+                f"LR: {optimizer.param_groups[0]['lr']:.2e}"
+            )
+        
+        return epoch_loss, epoch_acc
     
     def validate_epoch(self, model: nn.Module, val_loader: DataLoader, 
                       criterion: nn.Module, epoch: int) -> Tuple[float, float, Dict[str, Any]]:
@@ -284,15 +479,31 @@ class Trainer:
                 
                 with autocast(device_type='cuda', enabled=self.config['training']['mixed_precision']):
                     outputs = model(images)
-                    loss = criterion(outputs['main_logits'], labels)
                     
-                    # Add auxiliary loss if available
-                    if 'aux_logits' in outputs:
-                        aux_loss = criterion(outputs['aux_logits'], labels)
-                        loss = loss + 0.5 * aux_loss
+                    # Handle dictionary output from model
+                    if isinstance(outputs, dict):
+                        main_logits = outputs['main_logits']
+                        aux_logits = outputs.get('aux_logits')
+                        
+                        # Calculate main loss
+                        main_loss = criterion(main_logits, labels)
+                        
+                        # Calculate auxiliary loss if available and enabled
+                        aux_loss = 0.0
+                        if aux_logits is not None and self.config['training'].get('use_aux_loss', False):
+                            aux_loss = criterion(aux_logits, labels) * self.config['training'].get('aux_loss_weight', 0.5)
+                        
+                        # Combine losses
+                        loss = main_loss + aux_loss
+                        
+                        # Get predictions from main logits
+                        predictions = torch.argmax(main_logits, dim=1)
+                    else:
+                        # Handle case where model returns raw logits (for backward compatibility)
+                        loss = criterion(outputs, labels)
+                        predictions = torch.argmax(outputs, dim=1)
                 
                 running_loss += loss.item()
-                predictions = torch.argmax(outputs['main_logits'], dim=1)
                 all_predictions.extend(predictions.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
         
@@ -308,73 +519,6 @@ class Trainer:
         
         return epoch_loss, epoch_acc, metrics
         
-    def train_epoch(self, model: nn.Module, train_loader: DataLoader, 
-                   criterion: nn.Module, optimizer: optim.Optimizer, 
-                   scaler: GradScaler, epoch: int) -> Tuple[float, float]:
-        """Train for one epoch."""
-        model.train()
-        running_loss = 0.0
-        all_predictions = []
-        all_labels = []
-        
-        pbar = tqdm(train_loader, desc=f'Epoch {epoch+1}/{self.config["training"]["epochs"]}')
-        
-        for batch_idx, batch in enumerate(pbar):
-            # Validation
-            if not validate_batch_shapes(batch):
-                print(f"Skipping corrupted batch {batch_idx}")
-                continue
-            
-            images = batch['image'].to(self.device, non_blocking=True)
-            labels = batch['label'].to(self.device, non_blocking=True)
-
-            # Additional check after moving to device
-            if images.dim() != 4 or images.size(1) != 9:
-                print(f"ERROR: Wrong channels {images.shape} in batch {batch_idx}")
-                continue
-            
-            # Zero the parameter gradients
-            optimizer.zero_grad()
-            
-            # Forward + backward + optimize
-            with autocast(device_type='cuda', enabled=self.config['training']['mixed_precision']):
-                outputs = model(images)
-                loss = criterion(outputs['main_logits'], labels)
-                
-                # Add auxiliary loss if available
-                if 'aux_logits' in outputs:
-                    aux_loss = criterion(outputs['aux_logits'], labels)
-                    loss = loss + 0.5 * aux_loss
-            
-            # Scale loss and backpropagate
-            scaler.scale(loss).backward()
-            
-            # Gradient clipping
-            if self.config['training']['grad_clip'] > 0:
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(model.parameters(), self.config['training']['grad_clip'])
-            
-            # Update weights
-            scaler.step(optimizer)
-            scaler.update()
-            
-            # Statistics
-            running_loss += loss.item()
-            predictions = torch.argmax(outputs['main_logits'], dim=1)
-            all_predictions.extend(predictions.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
-            
-            # Update progress bar
-            pbar.set_postfix({
-                'Loss': f'{loss.item():.4f}',
-                'Avg Loss': f'{running_loss/(batch_idx+1):.4f}'
-            })
-        
-        epoch_loss = running_loss / len(train_loader)
-        epoch_acc = accuracy_score(all_labels, all_predictions)
-        
-        return epoch_loss, epoch_acc
-
     def save_checkpoint(self, model: nn.Module, optimizer: optim.Optimizer, 
                        epoch: int, best_train_acc: float, is_best: bool = False):
         """Save model checkpoint."""
@@ -582,6 +726,34 @@ class Trainer:
         ax2.clear()
         
         epochs = range(1, len(self.train_losses) + 1)
+        
+        # Plot loss
+        ax1.plot(epochs, self.train_losses, 'b-', label='Train Loss')
+        ax1.plot(epochs, self.val_losses, 'r-', label='Val Loss')
+        ax1.set_title('Training and Validation Loss')
+        ax1.set_xlabel('Epochs')
+        ax1.set_ylabel('Loss')
+        ax1.legend()
+        ax1.grid(True)
+        
+        # Plot accuracy
+        ax2.plot(epochs, self.train_accuracies, 'b-', label='Train Acc')
+        ax2.plot(epochs, self.val_accuracies, 'r-', label='Val Acc')
+        ax2.set_title('Training and Validation Accuracy')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Accuracy')
+        ax2.legend()
+        ax2.grid(True)
+        
+        plt.tight_layout()
+        
+        # Save plot if requested
+        if save:
+            plot_path = os.path.join(self.config['output']['plot_dir'], 'training_history.png')
+            plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+            self.logger.info(f"Saved final training plots to {plot_path}")
+        
+        plt.pause(0.1)  # Pause to update the plot
         
         # Plot loss
         ax1.plot(epochs, self.train_losses, 'b-', label='Train Loss')
