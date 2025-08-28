@@ -102,10 +102,10 @@ python src/evaluate.py --model_path path/to/model.pth --data_dir path/to/test_da
 
 | Metric         | Value  |
 |----------------|--------|
-| Accuracy      | 92.5%  |
-| Precision     | 91.8%  |
-| Recall        | 89.3%  |
-| F1-Score      | 90.5%  |
+| Accuracy      | 71.0%  |
+| Precision     | 71.0%  |
+| Recall        | 99.0%  |
+| F1-Score      | 83.0%  |
 
 ### Confusion Matrix
 
