@@ -109,7 +109,7 @@ python src/evaluate.py --model_path path/to/model.pth --data_dir path/to/test_da
 
 ### Confusion Matrix
 
-![Confusion Matrix](outputs/plots/confusion_matrix.png)
+![Confusion Matrix](https://github.com/user-attachments/assets/f30bc3ed-3ba5-4248-aadf-3792f1ec1ffb)
 
 ## 🛠️ Configuration
 
